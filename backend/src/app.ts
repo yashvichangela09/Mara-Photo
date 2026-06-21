@@ -1,0 +1,75 @@
+import express, { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
+import path from 'path';
+import apiRouter from './routes';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Rate limiting to secure API against brute-force/DDoS
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5000, // Increased limit to allow large folder bulk uploads
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Middlewares
+app.use(cors({
+  origin: '*', // Customize to NextJS frontend origin in production (e.g., http://localhost:3000)
+  credentials: true,
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/api', limiter);
+
+// Register API Routes
+app.use('/api', apiRouter);
+
+// Global Health Check
+app.get('/health', (req: Request, res: Response) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date(),
+    uptime: process.uptime(),
+  });
+});
+
+// Mock WhatsApp receiver for local testing redirection
+app.post('/api/mock/whatsapp', (req: Request, res: Response) => {
+  console.log('[MOCK WHATSAPP INBOUND]:', req.body);
+  res.json({ success: true, message: 'Mock processed' });
+});
+
+// Centralized Error Handling Middleware
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('Unhandled Server Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+  });
+});
+
+// Connect to MongoDB & Start Server
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/maraphoto';
+console.log('Connecting to database...');
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log('Connected to MongoDB Database successfully.');
+    app.listen(PORT, () => {
+      console.log(`Backend server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Database connection failure:', err);
+    process.exit(1);
+  });
+
+export default app;

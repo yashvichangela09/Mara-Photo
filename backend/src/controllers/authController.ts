@@ -1,0 +1,260 @@
+import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { User, Studio } from '../models';
+import { sendOTPEmail } from '../services/EmailService';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'default_super_secret_jwt_access_token_key_1234';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'default_super_secret_jwt_refresh_token_key_5678';
+
+const generateTokens = (userId: string, role: string) => {
+  const accessToken = jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '15m' }); // 15 mins expiry standard
+  const refreshToken = jwt.sign({ userId, role }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  return { accessToken, refreshToken };
+};
+
+/**
+ * Register a new Studio Owner and auto-initialize their Studio profile
+ */
+export const registerStudioOwner = async (req: Request, res: Response) => {
+  const { name, email, password, studioName, subdomain } = req.body;
+
+  try {
+    if (!name || !email || !password || !studioName || !subdomain) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    const cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const existingStudio = await Studio.findOne({ subdomain: cleanSubdomain });
+    if (existingStudio) {
+      return res.status(400).json({ error: 'Subdomain already taken' });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    // Create user
+    const newUser = await User.create({
+      name,
+      email: email.toLowerCase(),
+      passwordHash,
+      role: 'STUDIO_OWNER',
+    });
+
+    // Create studio
+    const newStudio = await Studio.create({
+      name: studioName,
+      subdomain: cleanSubdomain,
+      ownerId: newUser._id,
+      subscriptionPlan: 'STARTER',
+      subscriptionStatus: 'FREE',
+    });
+
+    const tokens = generateTokens(newUser._id.toString(), newUser.role);
+    newUser.refreshToken = tokens.refreshToken;
+    await newUser.save();
+
+    return res.status(201).json({
+      message: 'Studio registered successfully',
+      user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role },
+      studio: { id: newStudio._id, name: newStudio.name, subdomain: newStudio.subdomain },
+      ...tokens,
+    });
+  } catch (err: any) {
+    console.error('Registration error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Normal email/password login
+ */
+export const login = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  try {
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    console.log("Login attempt:", email, "User found:", !!user);
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    console.log("Password match:", isMatch);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const tokens = generateTokens(user._id.toString(), user.role);
+    user.refreshToken = tokens.refreshToken;
+    await user.save();
+
+    // Check if user is associated with any studio
+    let studio = null;
+    if (user.role === 'STUDIO_OWNER') {
+      studio = await Studio.findOne({ ownerId: user._id });
+    } else if (user.role === 'TEAM_MEMBER') {
+      // Find studio where they are team members (we can query events assigned or link in Studio schema,
+      // for simplicity we'll check Studio by owner, or fetch dynamically)
+      studio = await Studio.findOne({ ownerId: user._id }); // Fallback or customize
+    }
+
+    return res.json({
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      studio: studio ? { id: studio._id, name: studio.name, subdomain: studio.subdomain } : null,
+      ...tokens,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Google Login validation (registers if not present, logs in if exists)
+ */
+export const googleLogin = async (req: Request, res: Response) => {
+  const { token, name, email, googleId } = req.body;
+
+  try {
+    if (!email || !googleId) {
+      return res.status(400).json({ error: 'Google authentication details missing' });
+    }
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (!user) {
+      // Create user as client by default, studio owner if they sign up via studio onboarding
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email: email.toLowerCase(),
+        googleId,
+        role: 'CLIENT',
+      });
+    } else if (!user.googleId) {
+      user.googleId = googleId;
+      await user.save();
+    }
+
+    const tokens = generateTokens(user._id.toString(), user.role);
+    user.refreshToken = tokens.refreshToken;
+    await user.save();
+
+    return res.json({
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      ...tokens,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * OTP Request (generates and emails verification code)
+ */
+export const requestOTP = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  try {
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      // Auto-register client users on OTP request
+      user = await User.create({
+        name: email.split('@')[0],
+        email: email.toLowerCase(),
+        role: 'CLIENT',
+      });
+    }
+
+    // Generate 6 digit numeric code
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins expiry
+
+    user.otp = { code: otpCode, expiresAt };
+    await user.save();
+
+    // Send via email service
+    await sendOTPEmail(user.email, otpCode);
+
+    return res.json({ message: 'Verification OTP sent to your email' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * OTP Verification (validates and issues session tokens)
+ */
+export const verifyOTP = async (req: Request, res: Response) => {
+  const { email, code } = req.body;
+
+  try {
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and verification code are required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user || !user.otp || user.otp.code !== code) {
+      return res.status(401).json({ error: 'Invalid verification code' });
+    }
+
+    if (new Date() > user.otp.expiresAt) {
+      return res.status(401).json({ error: 'Verification code has expired' });
+    }
+
+    // Clear OTP on successful validation
+    user.otp = undefined;
+    
+    const tokens = generateTokens(user._id.toString(), user.role);
+    user.refreshToken = tokens.refreshToken;
+    await user.save();
+
+    return res.json({
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      ...tokens,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Refresh access token
+ */
+export const refreshToken = async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(401).json({ error: 'Refresh token is required' });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as { userId: string; role: string };
+    const user = await User.findById(decoded.userId);
+
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(401).json({ error: 'Invalid refresh token' });
+    }
+
+    const tokens = generateTokens(user._id.toString(), user.role);
+    user.refreshToken = tokens.refreshToken;
+    await user.save();
+
+    return res.json({ ...tokens });
+  } catch (err: any) {
+    return res.status(401).json({ error: 'Expired or invalid refresh token' });
+  }
+};
