@@ -300,7 +300,7 @@ export const processPhoto = async (mediaId: string, studioId: string) => {
     const thumbnailUrl = await uploadToR2(thumbnailImage, thumbKey, 'image/jpeg');
 
     const formData = new FormData();
-    const fileBlob = new Blob([thumbnailImage], { type: 'image/jpeg' });
+    const fileBlob = new Blob([new Uint8Array(thumbnailImage)], { type: 'image/jpeg' });
     formData.append('file', fileBlob, 'image.jpg');
 
     let faces = [];
@@ -386,7 +386,7 @@ export const processVideo = async (mediaId: string, studioId: string) => {
       const frameBuffer = fs.readFileSync(framePath);
 
       const formData = new FormData();
-      const fileBlob = new Blob([frameBuffer], { type: 'image/jpeg' });
+      const fileBlob = new Blob([new Uint8Array(frameBuffer)], { type: 'image/jpeg' });
       formData.append('file', fileBlob, 'frame.jpg');
 
       try {

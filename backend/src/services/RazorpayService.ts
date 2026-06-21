@@ -36,9 +36,7 @@ export const createSubscription = async (planKey: keyof typeof PLAN_IDS) => {
  * Cancels an active Razorpay subscription at the end of the current billing cycle
  */
 export const cancelSubscription = async (subscriptionId: string) => {
-  return razorpay.subscriptions.cancel(subscriptionId, {
-    cancel_at_cycle_end: true,
-  });
+  return razorpay.subscriptions.cancel(subscriptionId, true);
 };
 
 /**

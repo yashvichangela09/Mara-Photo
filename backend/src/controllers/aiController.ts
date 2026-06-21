@@ -30,7 +30,7 @@ export const searchBySelfie = async (req: Request, res: Response) => {
 
     // 1. Call AI service to extract embedding for the selfie
     const formData = new FormData();
-    const fileBlob = new Blob([file.buffer], { type: file.mimetype });
+    const fileBlob = new Blob([new Uint8Array(file.buffer)], { type: file.mimetype });
     formData.append('file', fileBlob, 'selfie.jpg');
 
     const aiResponse = await axios.post(`${AI_SERVICE_URL}/detect-faces`, formData, {
