@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User, Studio } from '../models';
-import { sendOTPEmail } from '../services/EmailService';
+import { sendOTPEmail, sendWelcomeEmail } from '../services/EmailService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_super_secret_jwt_access_token_key_1234';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'default_super_secret_jwt_refresh_token_key_5678';
@@ -17,11 +17,20 @@ const generateTokens = (userId: string, role: string) => {
  * Register a new Studio Owner and auto-initialize their Studio profile
  */
 export const registerStudioOwner = async (req: Request, res: Response) => {
-  const { name, email, password, studioName, subdomain } = req.body;
+  const { name, email, password, phone, studioName, subdomain } = req.body;
 
   try {
-    if (!name || !email || !password || !studioName || !subdomain) {
+    if (!name || !email || !password || !phone || !studioName || !subdomain) {
       return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      return res.status(400).json({ error: 'Mobile number must be exactly 10 digits and start with 6, 7, 8, or 9.' });
+    }
+
+    const passwordRegex = /^[A-Z](?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&#]).{5,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({ error: 'Password must start with a Capital letter, and contain at least 1 number, 1 special character, and small letters.' });
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -43,6 +52,7 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
     const newUser = await User.create({
       name,
       email: email.toLowerCase(),
+      phone,
       passwordHash,
       role: 'STUDIO_OWNER',
     });
@@ -59,6 +69,9 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
     const tokens = generateTokens(newUser._id.toString(), newUser.role);
     newUser.refreshToken = tokens.refreshToken;
     await newUser.save();
+
+    // Send Welcome Email asynchronously (don't block the response)
+    sendWelcomeEmail(newUser.email, newUser.name, true).catch(err => console.error("Welcome Email Failed:", err));
 
     return res.status(201).json({
       message: 'Studio registered successfully',
@@ -222,6 +235,9 @@ export const verifyOTP = async (req: Request, res: Response) => {
     user.refreshToken = tokens.refreshToken;
     await user.save();
 
+    // Send Welcome Email asynchronously
+    sendWelcomeEmail(user.email, user.name || 'Guest', false).catch(err => console.error("Welcome Email Failed:", err));
+
     return res.json({
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
       ...tokens,
@@ -256,5 +272,106 @@ export const refreshToken = async (req: Request, res: Response) => {
     return res.json({ ...tokens });
   } catch (err: any) {
     return res.status(401).json({ error: 'Expired or invalid refresh token' });
+  }
+};
+
+/**
+ * Request OTP for Forgot Password
+ */
+export const forgotPasswordRequestOTP = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  try {
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with that email address.' });
+    }
+
+    // Generate 6 digit numeric code
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins expiry
+
+    user.otp = { code: otpCode, expiresAt };
+    await user.save();
+
+    // Send via email service
+    await sendOTPEmail(user.email, otpCode);
+
+    return res.json({ message: 'Password reset OTP sent to your email' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Verify OTP before allowing password reset
+ */
+export const verifyResetOTP = async (req: Request, res: Response) => {
+  const { email, otp } = req.body;
+
+  try {
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Email and OTP are required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user || !user.otp || user.otp.code !== otp) {
+      return res.status(401).json({ error: 'Invalid verification code' });
+    }
+
+    if (new Date() > user.otp.expiresAt) {
+      return res.status(401).json({ error: 'Verification code has expired' });
+    }
+
+    return res.json({ message: 'OTP verified successfully.' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Reset Password with OTP
+ */
+export const resetPassword = async (req: Request, res: Response) => {
+  const { email, otp, newPassword } = req.body;
+
+  try {
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ error: 'Email, OTP, and new password are required' });
+    }
+
+    const passwordRegex = /^[A-Z](?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&#]).{5,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ error: 'Password must start with a Capital letter, and contain at least 1 number, 1 special character, and small letters.' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user || !user.otp || user.otp.code !== otp) {
+      return res.status(401).json({ error: 'Invalid verification code' });
+    }
+
+    if (new Date() > user.otp.expiresAt) {
+      return res.status(401).json({ error: 'Verification code has expired' });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // Update user and clear OTP
+    user.passwordHash = passwordHash;
+    user.otp = undefined;
+    
+    // Invalidate refresh tokens (log out from all devices)
+    user.refreshToken = undefined;
+    await user.save();
+
+    return res.json({ message: 'Password has been successfully reset.' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
   }
 };

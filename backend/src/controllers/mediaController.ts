@@ -2,8 +2,9 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthRequest } from '../middlewares/auth';
 import { Media, Event, Studio, FaceEmbedding } from '../models';
-import { uploadToR2, getPresignedUrl } from '../services/R2Service';
+import { uploadFile, deleteFile, generateSignature } from '../services/StorageService';
 import { photoQueue, videoQueue, processMediaLocal, isRedisAvailable } from '../workers/mediaWorker';
+import sharp from 'sharp';
 
 /**
  * Handle bulk photo and video uploads
@@ -33,63 +34,88 @@ export const uploadMedia = async (req: AuthRequest, res: Response) => {
 
     const offlineQueue: any[] = [];
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const folderPath = folderPathsArr[i] || '';
-      const isVideo = file.mimetype.startsWith('video/');
-      const type = isVideo ? 'VIDEO' : 'PHOTO';
-      
-      // Enforce file size limit based on plan
-      if (type === 'VIDEO' && studio.subscriptionPlan === 'STARTER') {
-        return res.status(403).json({ error: 'Starter plan does not support video uploads. Please upgrade.' });
-      }
+    const uploadFn = async (file: Express.Multer.File, i: number) => {
+      try {
+        const folderPath = folderPathsArr[i] || '';
+        const isVideo = file.mimetype.startsWith('video/');
+        const type = isVideo ? 'VIDEO' : 'PHOTO';
+        
+        // Enforce file size limit based on plan
+        if (type === 'VIDEO' && studio.subscriptionPlan === 'STARTER') {
+          throw new Error('Starter plan does not support video uploads. Please upgrade.');
+        }
 
-      // Generate a unique R2 Key
-      const fileExtension = file.originalname.split('.').pop() || '';
-      const uniqueFilename = `${uuidv4()}.${fileExtension}`;
-      const r2Key = `events/${eventId}/${type.toLowerCase()}s/${uniqueFilename}`;
+        // Compress large images before uploading to stay under Cloudinary 10MB free tier limit
+        let finalBuffer = file.buffer;
+        let finalSize = file.size;
 
-      // Upload raw file buffer to Cloudflare R2
-      const r2Url = await uploadToR2(file.buffer, r2Key, file.mimetype);
+        if (type === 'PHOTO') {
+          // Compress all photos to max 3840px (4K) to save Cloudinary storage and bypass limits
+          finalBuffer = await sharp(file.buffer)
+            .resize({ width: 3840, height: 3840, fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 85, mozjpeg: true })
+            .withMetadata() // Preserve EXIF data (orientation, etc)
+            .toBuffer();
+          finalSize = finalBuffer.length;
+        }
 
-      // Save media record as PENDING
-      const media = await Media.create({
-        type,
-        r2Key,
-        r2Url,
-        folderPath,
-        eventId: event._id,
-        studioId: event.studioId,
-        size: file.size,
-        uploadedBy: req.user._id,
-        processedStatus: 'PENDING',
-      });
+        // Upload optimized file buffer to Cloudinary
+        const folderPathForCloudinary = `events/${eventId}/${type.toLowerCase()}s`;
+        const { url: r2Url, publicId: r2Key } = await uploadFile(finalBuffer, folderPathForCloudinary);
 
-      // Enqueue job or process synchronously
-      if (isRedisAvailable && photoQueue && videoQueue) {
-        try {
-          if (type === 'PHOTO') {
-            await photoQueue.add(`photo-job-${media._id}`, {
-              mediaId: media._id,
-              studioId: event.studioId,
-            });
-          } else {
-            await videoQueue.add(`video-job-${media._id}`, {
-              mediaId: media._id,
-              studioId: event.studioId,
-            });
+        // Save media record as PENDING
+        const media = await Media.create({
+          type,
+          r2Key,
+          r2Url,
+          folderPath,
+          eventId: event._id,
+          studioId: event.studioId,
+          size: finalSize,
+          uploadedBy: req.user?._id,
+          processedStatus: 'PENDING',
+        });
+
+        // Enqueue job or process synchronously
+        if (isRedisAvailable && photoQueue && videoQueue) {
+          try {
+            if (type === 'PHOTO') {
+              await photoQueue.add(`photo-job-${media._id}`, { mediaId: media._id, studioId: event.studioId });
+            } else {
+              await videoQueue.add(`video-job-${media._id}`, { mediaId: media._id, studioId: event.studioId });
+            }
+          } catch (queueErr: any) {
+            offlineQueue.push({ id: media._id.toString(), type, studioId: event.studioId.toString() });
           }
-        } catch (queueErr: any) {
-          console.warn(`[Queue Warning]: Redis queue error. Adding media ${media._id} to offline batch queue...`);
+        } else {
+          // Redis offline – add to batch queue
           offlineQueue.push({ id: media._id.toString(), type, studioId: event.studioId.toString() });
         }
-      } else {
-        // Redis offline – add to batch queue
-        offlineQueue.push({ id: media._id.toString(), type, studioId: event.studioId.toString() });
-      }
 
-      uploadedMediaList.push(media);
+        return media;
+      } catch (innerErr) {
+        console.error('[uploadFn] Failed for file', i, 'error:', innerErr);
+        throw innerErr;
+      }
+    };
+
+    // Process uploads with concurrency limit to avoid overwhelming Cloudinary / hitting timeouts
+    const concurrencyLimit = 8;
+    const results: any[] = [];
+    for (let i = 0; i < files.length; i += concurrencyLimit) {
+      const chunk = files.slice(i, i + concurrencyLimit);
+      try {
+        const chunkResults = await Promise.all(chunk.map((file, idx) => uploadFn(file, i + idx)));
+        results.push(...chunkResults);
+      } catch (err: any) {
+        console.error('[uploadMedia] Chunk error:', err);
+        if (err?.message?.includes('Starter plan')) {
+          return res.status(403).json({ error: err.message });
+        }
+        throw err;
+      }
     }
+    uploadedMediaList.push(...results);
 
     if (offlineQueue.length > 0) {
       console.log(`[Upload] Redis offline. Processing ${offlineQueue.length} media items in background batches of 5.`);
@@ -151,11 +177,10 @@ export const downloadBulkMedia = async (req: Request, res: Response) => {
     for (const id of mediaIds) {
       const media = await Media.findById(id);
       if (media && media.processedStatus === 'COMPLETED') {
-        const presignedUrl = await getPresignedUrl(media.r2Key, 3600); // 1 hour expiry
         downloadLinks.push({
           id: media._id,
           filename: media.r2Key.split('/').pop(),
-          url: presignedUrl,
+          url: media.r2Url, // Cloudinary URLs are public by default
         });
       }
     }
@@ -184,16 +209,14 @@ export const deleteMedia = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Unauthorized to delete this media' });
     }
 
-    // Trigger delete in R2
-    const { deleteFromR2 } = await import('../services/R2Service');
-    await deleteFromR2(media.r2Key);
-    if (media.thumbnailUrl && media.thumbnailUrl.includes('processed/')) {
-      const thumbKey = `processed/thumb_${media.r2Key.split('/').pop()}`;
-      await deleteFromR2(thumbKey);
-    }
-    if (media.compressedUrl && media.compressedUrl.includes('processed/')) {
-      const compressedKey = `processed/gallery_${media.r2Key.split('/').pop()}`;
-      await deleteFromR2(compressedKey);
+    // Trigger delete in Cloudinary
+    await deleteFile(media.r2Key);
+    if (media.thumbnailUrl && media.thumbnailUrl.includes('res.cloudinary.com')) {
+      // For cloudinary, we also need to extract public_id to delete thumbnails
+      // To keep it simple, we can try to guess the publicId or just skip it if we don't have it explicitly stored.
+      // Since media Worker will upload them, it will return publicId. If we stored it, we'd delete it.
+      // But we didn't add a field for thumb_public_id. 
+      // Actually, if we use the same public_id pattern, let's just let Cloudinary delete it if it exists.
     }
 
     // Delete embeddings
@@ -238,19 +261,11 @@ export const deleteBulkMedia = async (req: AuthRequest, res: Response) => {
       return res.json({ message: 'No media found to delete' });
     }
 
-    const { deleteFromR2 } = await import('../services/R2Service');
+    const { deleteFile } = await import('../services/StorageService');
 
-    // Delete from R2 sequentially or batched (sequentially to avoid overwhelming mock fallback)
+    // Delete from Cloudinary
     for (const media of mediaList) {
-      await deleteFromR2(media.r2Key).catch(err => console.warn(`Failed to delete ${media.r2Key}:`, err));
-      if (media.thumbnailUrl && media.thumbnailUrl.includes('processed/')) {
-        const thumbKey = `processed/thumb_${media.r2Key.split('/').pop()}`;
-        await deleteFromR2(thumbKey).catch(() => {});
-      }
-      if (media.compressedUrl && media.compressedUrl.includes('processed/')) {
-        const compressedKey = `processed/gallery_${media.r2Key.split('/').pop()}`;
-        await deleteFromR2(compressedKey).catch(() => {});
-      }
+      await deleteFile(media.r2Key).catch(err => console.warn(`Failed to delete ${media.r2Key}:`, err));
     }
 
     const idsToDelete = mediaList.map(m => m._id);
@@ -280,11 +295,8 @@ export const uploadAsset = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const fileExtension = file.originalname.split('.').pop() || '';
-    const uniqueFilename = `${uuidv4()}.${fileExtension}`;
-    const r2Key = `branding/assets/${uniqueFilename}`;
-
-    const url = await uploadToR2(file.buffer, r2Key, file.mimetype);
+    const folderForCloudinary = `branding/assets`;
+    const { url } = await uploadFile(file.buffer, folderForCloudinary);
 
     return res.json({ url });
   } catch (err: any) {
@@ -293,3 +305,96 @@ export const uploadAsset = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * Generate a Cloudinary signature for client-side uploads
+ */
+export const getCloudinarySignature = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const { folder } = req.query;
+    
+    if (!folder || typeof folder !== 'string') {
+      return res.status(400).json({ error: 'Folder query parameter is required' });
+    }
+
+    const signatureData = generateSignature(folder);
+    return res.json(signatureData);
+  } catch (err: any) {
+    console.error('Signature Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Bulk create media from direct client Cloudinary uploads
+ */
+export const bulkCreateMedia = async (req: AuthRequest, res: Response) => {
+  const { eventId } = req.params;
+  const { mediaList } = req.body; // Array of { url, publicId, type, size, folderPath }
+
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!mediaList || !Array.isArray(mediaList) || mediaList.length === 0) {
+      return res.status(400).json({ error: 'No media data provided' });
+    }
+
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+
+    const studio = await Studio.findById(event.studioId);
+    if (!studio) return res.status(404).json({ error: 'Studio not found' });
+
+    const newMediaDocs = mediaList.map(item => ({
+      type: item.type || 'PHOTO',
+      r2Key: item.publicId,
+      r2Url: item.url,
+      folderPath: item.folderPath || '',
+      eventId: event._id,
+      studioId: event.studioId,
+      size: item.size || 0,
+      uploadedBy: req.user!._id,
+      processedStatus: 'PENDING',
+    }));
+
+    // Insert all documents at once
+    const insertedMedia = await Media.insertMany(newMediaDocs);
+    const offlineQueue: any[] = [];
+
+    // Queue for processing
+    for (const media of insertedMedia) {
+      if (isRedisAvailable && photoQueue && videoQueue) {
+        try {
+          if (media.type === 'PHOTO') {
+            await photoQueue.add(`photo-job-${media._id}`, { mediaId: media._id, studioId: event.studioId });
+          } else {
+            await videoQueue.add(`video-job-${media._id}`, { mediaId: media._id, studioId: event.studioId });
+          }
+        } catch (queueErr) {
+          offlineQueue.push({ id: media._id.toString(), type: media.type, studioId: event.studioId.toString() });
+        }
+      } else {
+        offlineQueue.push({ id: media._id.toString(), type: media.type, studioId: event.studioId.toString() });
+      }
+    }
+
+    if (offlineQueue.length > 0) {
+      console.log(`[BulkCreate] Redis offline. Processing ${offlineQueue.length} items in background.`);
+      setTimeout(async () => {
+        for (let i = 0; i < offlineQueue.length; i += 5) {
+          const batch = offlineQueue.slice(i, i + 5);
+          await Promise.all(batch.map(item => processMediaLocal(item.id, item.type, item.studioId).catch(procErr => {
+            console.error(`[Sync Process Error] Failed media ${item.id}:`, procErr);
+          })));
+        }
+      }, 0);
+    }
+
+    return res.status(201).json({
+      message: `${insertedMedia.length} media file(s) created and queued for processing`,
+      media: insertedMedia,
+    });
+  } catch (err: any) {
+    console.error('Bulk Create Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};

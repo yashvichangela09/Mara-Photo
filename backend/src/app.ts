@@ -22,7 +22,7 @@ const limiter = rateLimit({
 
 // Middlewares
 app.use(cors({
-  origin: '*', // Customize to NextJS frontend origin in production (e.g., http://localhost:3000)
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], // Allow Next.js frontend
   credentials: true,
 }));
 app.use(express.json());

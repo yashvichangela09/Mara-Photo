@@ -101,3 +101,62 @@ export const sendEventInviteEmail = async (
   `;
   return sendEmail(to, subject, html);
 };
+
+/**
+ * Sends a welcome email for newly registered studios or guests
+ */
+export const sendWelcomeEmail = async (to: string, name: string = 'User', isStudio: boolean = false): Promise<any> => {
+  const subject = isStudio ? 'Welcome to Mara Photo Studio! 📸' : 'Welcome to Mara Photo - Your Visual Workspace';
+  const roleText = isStudio 
+    ? `
+      <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">Thank you for registering your photography studio with <strong>Mara Photo</strong>! We are absolutely thrilled to have you on board.</p>
+      <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">With your new Studio Account, you now have access to a powerful suite of tools designed to revolutionize how you deliver photos to your clients. Here is what you can do right now:</p>
+      
+      <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0;">
+        <h3 style="color: #1e293b; margin-top: 0;">🚀 Getting Started:</h3>
+        <ol style="color: #4b5563; line-height: 1.8; margin-bottom: 0;">
+          <li><strong>Create an Event:</strong> Set up your first wedding, corporate event, or birthday party.</li>
+          <li><strong>Upload Photos:</strong> Drag and drop thousands of photos securely to our high-speed cloud.</li>
+          <li><strong>Let AI do the Magic:</strong> Our advanced facial recognition engine will automatically index every face.</li>
+          <li><strong>Share with Clients:</strong> Send a magical link or QR code to your clients. They just upload one selfie to get all their photos instantly!</li>
+        </ol>
+      </div>
+
+      <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">Say goodbye to the old days of sending Google Drive links and forcing clients to scroll through thousands of photos to find themselves. You are now officially a part of the next generation of photography!</p>
+    `
+    : `
+      <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">Welcome! You have successfully accessed your <strong>Mara Photo</strong> gallery.</p>
+      <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">You can now find all your beautiful memories instantly by simply uploading a single selfie. Our secure AI will scan the event and fetch every photo you are in.</p>
+    `;
+
+  const html = `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+      
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #2563eb; margin: 0; font-size: 28px; letter-spacing: -0.5px;">MARA PHOTO</h1>
+        <p style="color: #64748b; font-size: 14px; margin-top: 5px; text-transform: uppercase; letter-spacing: 2px;">Next-Gen AI Photo Delivery</p>
+      </div>
+
+      <h2 style="color: #1e293b; font-size: 24px;">Welcome, ${name}! 🎉</h2>
+      
+      ${roleText}
+
+      <div style="text-align: center; margin: 40px 0;">
+        <a href="\${process.env.FRONTEND_URL || 'http://localhost:3000'}" style="background-color: #2563eb; color: #ffffff; padding: 16px 32px; text-decoration: none; font-weight: 600; border-radius: 8px; display: inline-block; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
+          Access Your Dashboard
+        </a>
+      </div>
+
+      <p style="color: #64748b; font-size: 15px; line-height: 1.6;">If you need any help getting started, our support team is always here for you. Just reply directly to this email!</p>
+      
+      <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
+      
+      <p style="text-align: center; color: #94a3b8; font-size: 12px; line-height: 1.5;">
+        <strong>Mara Photo Technologies</strong><br/>
+        Find Every Memory With AI<br/>
+        © 2026 All Rights Reserved
+      </p>
+    </div>
+  `;
+  return sendEmail(to, subject, html);
+};

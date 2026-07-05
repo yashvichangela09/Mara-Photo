@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { registerStudioOwner, login, googleLogin, requestOTP, verifyOTP, refreshToken } from '../controllers/authController';
+import { registerStudioOwner, login, googleLogin, requestOTP, verifyOTP, refreshToken, forgotPasswordRequestOTP, verifyResetOTP, resetPassword } from '../controllers/authController';
 
 const router = Router();
 
@@ -9,5 +9,8 @@ router.post('/google-login', googleLogin);
 router.post('/request-otp', requestOTP);
 router.post('/verify-otp', verifyOTP);
 router.post('/refresh-token', refreshToken);
+router.post('/forgot-password-otp', forgotPasswordRequestOTP);
+router.post('/verify-reset-otp', verifyResetOTP);
+router.post('/reset-password', resetPassword);
 
 export default router;

@@ -1,6 +1,4 @@
 import { Worker, Queue, Job } from 'bullmq';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { Readable } from 'stream';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -10,7 +8,7 @@ import sharp from 'sharp';
 import ffmpeg from 'fluent-ffmpeg';
 import dotenv from 'dotenv';
 import { redisConfig } from '../config/redis';
-import { r2Client, uploadToR2 } from '../services/R2Service';
+import { uploadFile } from '../services/StorageService';
 import { Media, FaceEmbedding, Studio, Event } from '../models';
 
 dotenv.config();
@@ -45,24 +43,6 @@ checkRedis().then((available) => {
 });
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
-
-/**
- * Downloads a file from Cloudflare R2 into memory as a Buffer
- */
-const downloadR2ToBuffer = async (key: string): Promise<Buffer> => {
-  const command = new GetObjectCommand({
-    Bucket: process.env.R2_BUCKET_NAME || 'mara-photo',
-    Key: key,
-  });
-  const response = await r2Client.send(command);
-  const stream = response.Body as Readable;
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
-    stream.on('error', (err) => reject(err));
-    stream.on('end', () => resolve(Buffer.concat(chunks)));
-  });
-};
 
 /**
  * Downloads a file from a URL as a Buffer (e.g. for Studio Logos)
@@ -115,7 +95,12 @@ const applyWatermark = async (
 
   if (eventId) {
     const event = await Event.findById(eventId);
-    if (event?.watermark?.isActive) {
+    if (event) {
+      // If the event specifically has watermark disabled, DO NOT apply any watermark
+      if (!event.watermark?.isActive) {
+        return imageBuffer;
+      }
+      
       const wmType = event.watermark.type || 'LOGO';
       if (wmType === 'LOGO' && event.watermark.logoUrl) {
         wmSettings = {
@@ -274,7 +259,7 @@ export const processPhoto = async (mediaId: string, studioId: string) => {
   await Media.findByIdAndUpdate(mediaId, { processedStatus: 'PROCESSING' });
 
   try {
-    const originalBuffer = await downloadR2ToBuffer(media.r2Key);
+    const originalBuffer = await downloadUrlToBuffer(media.r2Url);
     const metadata = await sharp(originalBuffer).metadata();
     const width = metadata.width || 0;
     const height = metadata.height || 0;
@@ -287,8 +272,8 @@ export const processPhoto = async (mediaId: string, studioId: string) => {
 
     galleryImage = await applyWatermark(galleryImage, studioId, media.eventId.toString());
 
-    const galleryKey = `processed/gallery_${media.r2Key.split('/').pop()}`;
-    const compressedUrl = await uploadToR2(galleryImage, galleryKey, 'image/jpeg');
+    const folderForCloudinary = `events/${media.eventId}/photos/gallery`;
+    const { url: compressedUrl } = await uploadFile(galleryImage, folderForCloudinary);
 
     const thumbnailImage = await sharp(originalBuffer)
       .rotate()
@@ -296,11 +281,12 @@ export const processPhoto = async (mediaId: string, studioId: string) => {
       .jpeg({ quality: 75 })
       .toBuffer();
 
-    const thumbKey = `processed/thumb_${media.r2Key.split('/').pop()}`;
-    const thumbnailUrl = await uploadToR2(thumbnailImage, thumbKey, 'image/jpeg');
+    const thumbFolder = `events/${media.eventId}/photos/thumb`;
+    const { url: thumbnailUrl } = await uploadFile(thumbnailImage, thumbFolder);
 
     const formData = new FormData();
-    const fileBlob = new Blob([new Uint8Array(thumbnailImage)], { type: 'image/jpeg' });
+    // Send the high-res 1600px gallery image to AI service to detect tiny faces in group photos
+    const fileBlob = new Blob([new Uint8Array(galleryImage)], { type: 'image/jpeg' });
     formData.append('file', fileBlob, 'image.jpg');
 
     let faces = [];
@@ -353,7 +339,7 @@ export const processVideo = async (mediaId: string, studioId: string) => {
   fs.mkdirSync(framesDir);
 
   try {
-    const originalBuffer = await downloadR2ToBuffer(media.r2Key);
+    const originalBuffer = await downloadUrlToBuffer(media.r2Url);
     fs.writeFileSync(tempVideoPath, originalBuffer);
 
     const duration: number = await new Promise((resolve, reject) => {
@@ -411,7 +397,7 @@ export const processVideo = async (mediaId: string, studioId: string) => {
       }
     }
 
-    const thumbKey = `processed/thumb_vid_${media.r2Key.split('/').pop()}.jpg`;
+    const thumbFolder = `events/${media.eventId}/videos/thumb`;
     const tempThumbPath = path.join(tempDir, 'vid_thumb.jpg');
 
     await new Promise<void>((resolve, reject) => {
@@ -429,7 +415,8 @@ export const processVideo = async (mediaId: string, studioId: string) => {
     let thumbnailUrl = '';
     if (fs.existsSync(tempThumbPath)) {
       const thumbBuffer = fs.readFileSync(tempThumbPath);
-      thumbnailUrl = await uploadToR2(thumbBuffer, thumbKey, 'image/jpeg');
+      const { url } = await uploadFile(thumbBuffer, thumbFolder);
+      thumbnailUrl = url;
     }
 
     await Media.findByIdAndUpdate(mediaId, {

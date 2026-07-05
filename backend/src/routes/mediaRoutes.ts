@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { uploadMedia, getEventMedia, downloadBulkMedia, deleteMedia, uploadAsset, deleteBulkMedia } from '../controllers/mediaController';
+import { uploadMedia, getEventMedia, downloadBulkMedia, deleteMedia, uploadAsset, deleteBulkMedia, bulkCreateMedia, getCloudinarySignature } from '../controllers/mediaController';
 import { authenticateJWT } from '../middlewares/auth';
 import { upload } from '../middlewares/upload';
 
@@ -22,5 +22,10 @@ router.delete('/:mediaId', authenticateJWT, deleteMedia);
 
 // Bulk delete media for an event
 router.delete('/event/:eventId/media', authenticateJWT, deleteBulkMedia);
+// Bulk create media from direct client Cloudinary uploads
+router.post('/event/:eventId/bulk-create', authenticateJWT, bulkCreateMedia);
+
+// Get Cloudinary upload signature
+router.get('/cloudinary-signature', authenticateJWT, getCloudinarySignature);
 
 export default router;
