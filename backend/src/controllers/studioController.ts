@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth';
-import { Studio } from '../models';
+import { Studio, User } from '../models';
 
 /**
  * Get profile of current authenticated studio owner
@@ -9,13 +9,42 @@ export const getMyStudio = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
 
-    const studio = await Studio.findOne({ ownerId: req.user._id });
+    let studio = await Studio.findOne({ ownerId: req.user._id });
     if (!studio) {
-      return res.status(404).json({ error: 'Studio profile not found' });
+      // Auto-upgrade user's role to STUDIO_OWNER if they are a CLIENT
+      const user = await User.findById(req.user._id);
+      if (user) {
+        if (user.role === 'CLIENT') {
+          user.role = 'STUDIO_OWNER';
+          await user.save();
+          req.user.role = 'STUDIO_OWNER';
+        }
+      }
+
+      // Auto-create a default Studio profile
+      const cleanName = (user ? user.name : 'Mara') + ' Studio';
+      const cleanSub = 'studio-' + Math.random().toString(36).substring(2, 8);
+      
+      studio = await Studio.create({
+        name: cleanName,
+        subdomain: cleanSub,
+        ownerId: req.user._id,
+        subscriptionPlan: 'BASIC',
+        subscriptionStatus: 'ACTIVE',
+      });
+    } else {
+      // Check if user is STUDIO_OWNER in DB
+      const user = await User.findById(req.user._id);
+      if (user && user.role === 'CLIENT') {
+        user.role = 'STUDIO_OWNER';
+        await user.save();
+        req.user.role = 'STUDIO_OWNER';
+      }
     }
 
     return res.json({ studio });
   } catch (err: any) {
+    console.error('getMyStudio error:', err);
     return res.status(500).json({ error: err.message });
   }
 };

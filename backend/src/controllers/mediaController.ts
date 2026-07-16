@@ -40,9 +40,27 @@ export const uploadMedia = async (req: AuthRequest, res: Response) => {
         const isVideo = file.mimetype.startsWith('video/');
         const type = isVideo ? 'VIDEO' : 'PHOTO';
         
-        // Enforce file size limit based on plan
-        if (type === 'VIDEO' && studio.subscriptionPlan === 'STARTER') {
-          throw new Error('Starter plan does not support video uploads. Please upgrade.');
+        // Enforce limits based on plan
+        if (type === 'VIDEO') {
+          if (studio.subscriptionPlan === 'BASIC' && (studio.usage.videosUploaded || 0) >= 10) {
+            throw new Error('Basic plan video limit reached (Max 10 videos). Please upgrade.');
+          } else if (studio.subscriptionPlan === 'STANDARD' && (studio.usage.videosUploaded || 0) >= 100) {
+            throw new Error('Standard plan video limit reached (Max 100 videos). Please upgrade.');
+          } else if (studio.subscriptionPlan === 'ESSENTIAL' && (studio.usage.videosUploaded || 0) >= 200) {
+            throw new Error('Essential plan video limit reached (Max 200 videos). Please upgrade.');
+          } else if (studio.subscriptionPlan === 'PREMIUM' && (studio.usage.videosUploaded || 0) >= 500) {
+            throw new Error('Premium plan video limit reached (Max 500 videos). Please upgrade.');
+          }
+        } else if (type === 'PHOTO') {
+          if (studio.subscriptionPlan === 'BASIC' && (studio.usage.photosUploaded || 0) >= 50000) {
+            throw new Error('Basic plan photo limit reached (Max 50,000 photos). Please upgrade.');
+          } else if (studio.subscriptionPlan === 'STANDARD' && (studio.usage.photosUploaded || 0) >= 150000) {
+            throw new Error('Standard plan photo limit reached (Max 150,000 photos). Please upgrade.');
+          } else if (studio.subscriptionPlan === 'ESSENTIAL' && (studio.usage.photosUploaded || 0) >= 300000) {
+            throw new Error('Essential plan photo limit reached (Max 300,000 photos). Please upgrade.');
+          } else if (studio.subscriptionPlan === 'PREMIUM' && (studio.usage.photosUploaded || 0) >= 750000) {
+            throw new Error('Premium plan photo limit reached (Max 750,000 photos). Please upgrade.');
+          }
         }
 
         // Compress large images before uploading to stay under Cloudinary 10MB free tier limit

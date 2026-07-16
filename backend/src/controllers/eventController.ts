@@ -31,10 +31,10 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
 
     // Validate plan limit (Starter limit = 5, Pro = 20, Business = unlimited, etc.)
     const activeEventsCount = await Event.countDocuments({ studioId: studio._id });
-    if (studio.subscriptionPlan === 'STARTER' && activeEventsCount >= 5) {
-      return res.status(403).json({ error: 'Starter plan limit reached (Max 5 events). Please upgrade.' });
-    } else if (studio.subscriptionPlan === 'PROFESSIONAL' && activeEventsCount >= 20) {
-      return res.status(403).json({ error: 'Professional plan limit reached (Max 20 events). Please upgrade.' });
+    if (studio.subscriptionPlan === 'BASIC' && activeEventsCount >= 15) {
+      return res.status(403).json({ error: 'Basic plan limit reached (Max 15 events). Please upgrade.' });
+    } else if (studio.subscriptionPlan === 'STANDARD' && activeEventsCount >= 50) {
+      return res.status(403).json({ error: 'Standard plan limit reached (Max 50 events). Please upgrade.' });
     }
 
     // Generate unique code slug

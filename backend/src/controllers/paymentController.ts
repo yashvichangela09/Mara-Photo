@@ -7,25 +7,16 @@ import { createSubscription, cancelSubscription, verifyWebhookSignature } from '
  * Initiates Razorpay subscription billing session
  */
 export const createBillingSession = async (req: AuthRequest, res: Response) => {
-  const { plan } = req.body; // 'STARTER' | 'PROFESSIONAL' | 'BUSINESS' | 'ENTERPRISE'
+  const { plan } = req.body; // 'BASIC' | 'STANDARD' | 'ESSENTIAL' | 'PREMIUM'
 
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-    if (!plan || !['STARTER', 'PROFESSIONAL', 'BUSINESS', 'ENTERPRISE'].includes(plan)) {
+    if (!plan || !['BASIC', 'STANDARD', 'ESSENTIAL', 'PREMIUM'].includes(plan)) {
       return res.status(400).json({ error: 'Invalid subscription plan selected' });
     }
 
     const studio = await Studio.findOne({ ownerId: req.user._id });
     if (!studio) return res.status(404).json({ error: 'Studio not found' });
-
-    // Starter is Free/Mock. If others, call Razorpay
-    if (plan === 'STARTER') {
-      studio.subscriptionPlan = 'STARTER';
-      studio.subscriptionStatus = 'FREE';
-      studio.razorpaySubscriptionId = undefined;
-      await studio.save();
-      return res.json({ message: 'Subscribed to Starter Plan successfully', plan: 'STARTER', status: 'FREE' });
-    }
 
     // Call Razorpay API to generate Subscription details (try-catch wrapper for local testing)
     let subscriptionId = 'sub_mock_id_' + Date.now();
@@ -76,8 +67,8 @@ export const cancelMySubscription = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // Downgrade to STARTER active plan upon cancellation
-    studio.subscriptionPlan = 'STARTER';
+    // Downgrade to BASIC active plan upon cancellation
+    studio.subscriptionPlan = 'BASIC';
     studio.subscriptionStatus = 'ACTIVE';
     studio.razorpaySubscriptionId = undefined;
     await studio.save();
