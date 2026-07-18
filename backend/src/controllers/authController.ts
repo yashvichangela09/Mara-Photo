@@ -63,7 +63,7 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
       name: studioName,
       subdomain: cleanSubdomain,
       ownerId: newUser._id,
-      subscriptionPlan: 'STARTER',
+      subscriptionPlan: 'BASIC',
       subscriptionStatus: 'FREE',
       customDomain: websiteLink || undefined,
       logoUrl: logoUrl || undefined,

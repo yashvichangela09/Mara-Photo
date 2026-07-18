@@ -28,7 +28,7 @@ export interface IStudio extends Document {
   customDomain?: string; // e.g. "gallery.dreamstudio.com"
   ownerId: mongoose.Types.ObjectId;
   watermark: IWatermarkSettings;
-  subscriptionPlan: 'STARTER' | 'BASIC' | 'STANDARD' | 'ESSENTIAL' | 'PREMIUM';
+  subscriptionPlan: 'BASIC' | 'STANDARD' | 'ESSENTIAL' | 'PREMIUM';
   subscriptionStatus: 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'TRIALING' | 'FREE';
   razorpaySubscriptionId?: string;
   paymentDetails?: IPaymentDetails;
@@ -57,7 +57,7 @@ const StudioSchema = new Schema<IStudio>({
   },
   subscriptionPlan: { 
     type: String, 
-    enum: ['STARTER', 'BASIC', 'STANDARD', 'ESSENTIAL', 'PREMIUM'], 
+    enum: ['BASIC', 'STANDARD', 'ESSENTIAL', 'PREMIUM'], 
     default: 'BASIC' 
   },
   subscriptionStatus: { 
