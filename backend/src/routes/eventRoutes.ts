@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createEvent, getMyEvents, getEventByCode, verifyEventPassword, getEventQRCode, updateEvent, requestEventOtp, verifyEventOtp } from '../controllers/eventController';
+import { createEvent, getMyEvents, getEventByCode, verifyEventPassword, getEventQRCode, updateEvent, requestEventOtp, verifyEventOtp, deleteEvent, updatePortfolioStatus } from '../controllers/eventController';
 import { authenticateJWT, requireRoles } from '../middlewares/auth';
 
 const router = Router();
@@ -8,6 +8,8 @@ const router = Router();
 router.post('/', authenticateJWT, requireRoles(['STUDIO_OWNER', 'TEAM_MEMBER']), createEvent);
 router.get('/my', authenticateJWT, requireRoles(['STUDIO_OWNER', 'TEAM_MEMBER']), getMyEvents);
 router.put('/:eventId', authenticateJWT, requireRoles(['STUDIO_OWNER', 'TEAM_MEMBER']), updateEvent);
+router.patch('/:eventId/portfolio-status', authenticateJWT, requireRoles(['STUDIO_OWNER', 'TEAM_MEMBER']), updatePortfolioStatus);
+router.delete('/:eventId', authenticateJWT, requireRoles(['STUDIO_OWNER', 'TEAM_MEMBER']), deleteEvent);
 
 // Public / Guest gallery routes
 router.get('/code/:code', getEventByCode);

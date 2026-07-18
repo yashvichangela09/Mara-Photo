@@ -370,6 +370,8 @@ export const bulkCreateMedia = async (req: AuthRequest, res: Response) => {
       eventId: event._id,
       studioId: event.studioId,
       size: item.size || 0,
+      width: item.width,
+      height: item.height,
       uploadedBy: req.user!._id,
       processedStatus: 'PENDING',
     }));

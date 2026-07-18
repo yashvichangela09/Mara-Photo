@@ -21,12 +21,29 @@ const limiter = rateLimit({
 });
 
 // Middlewares
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], // Allow Next.js frontend
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const isAllowed = allowedOrigins.indexOf(origin) !== -1 || 
+                     origin.endsWith('.vercel.app') || 
+                     origin.includes('localhost') ||
+                     origin.includes('127.0.0.1') ||
+                     origin.includes('techaarambh');
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/api', limiter);
 

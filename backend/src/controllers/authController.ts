@@ -3,13 +3,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User, Studio } from '../models';
 import { sendOTPEmail, sendWelcomeEmail } from '../services/EmailService';
+import { AuthRequest } from '../middlewares/auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_super_secret_jwt_access_token_key_1234';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'default_super_secret_jwt_refresh_token_key_5678';
 
 const generateTokens = (userId: string, role: string) => {
-  const accessToken = jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '15m' }); // 15 mins expiry standard
-  const refreshToken = jwt.sign({ userId, role }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  const accessToken = jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '7d' });
+  const refreshToken = jwt.sign({ userId, role }, JWT_REFRESH_SECRET, { expiresIn: '30d' });
   return { accessToken, refreshToken };
 };
 
@@ -17,7 +18,7 @@ const generateTokens = (userId: string, role: string) => {
  * Register a new Studio Owner and auto-initialize their Studio profile
  */
 export const registerStudioOwner = async (req: Request, res: Response) => {
-  const { name, email, password, phone, studioName, subdomain } = req.body;
+  const { name, email, password, phone, studioName, subdomain, websiteLink, logoUrl } = req.body;
 
   try {
     if (!name || !email || !password || !phone || !studioName || !subdomain) {
@@ -64,6 +65,8 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
       ownerId: newUser._id,
       subscriptionPlan: 'STARTER',
       subscriptionStatus: 'FREE',
+      customDomain: websiteLink || undefined,
+      logoUrl: logoUrl || undefined,
     });
 
     const tokens = generateTokens(newUser._id.toString(), newUser.role);
@@ -75,8 +78,8 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
 
     return res.status(201).json({
       message: 'Studio registered successfully',
-      user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role },
-      studio: { id: newStudio._id, name: newStudio.name, subdomain: newStudio.subdomain },
+      user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role, phone: newUser.phone },
+      studio: { id: newStudio._id, name: newStudio.name, subdomain: newStudio.subdomain, logoUrl: newStudio.logoUrl, customDomain: newStudio.customDomain },
       ...tokens,
     });
   } catch (err: any) {
@@ -97,13 +100,11 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    console.log("Login attempt:", email, "User found:", !!user);
     if (!user || !user.passwordHash) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
-    console.log("Password match:", isMatch);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -116,10 +117,6 @@ export const login = async (req: Request, res: Response) => {
     let studio = null;
     if (user.role === 'STUDIO_OWNER') {
       studio = await Studio.findOne({ ownerId: user._id });
-    } else if (user.role === 'TEAM_MEMBER') {
-      // Find studio where they are team members (we can query events assigned or link in Studio schema,
-      // for simplicity we'll check Studio by owner, or fetch dynamically)
-      studio = await Studio.findOne({ ownerId: user._id }); // Fallback or customize
     }
 
     return res.json({
@@ -133,39 +130,40 @@ export const login = async (req: Request, res: Response) => {
 };
 
 /**
- * Google Login validation (registers if not present, logs in if exists)
+ * Get current authenticated user
  */
-export const googleLogin = async (req: Request, res: Response) => {
-  const { token, name, email, googleId } = req.body;
-
+export const getMe = async (req: AuthRequest, res: Response) => {
   try {
-    if (!email || !googleId) {
-      return res.status(400).json({ error: 'Google authentication details missing' });
-    }
-
-    let user = await User.findOne({ email: email.toLowerCase() });
-    
+    const user = req.user;
     if (!user) {
-      // Create user as client by default, studio owner if they sign up via studio onboarding
-      user = await User.create({
-        name: name || email.split('@')[0],
-        email: email.toLowerCase(),
-        googleId,
-        role: 'CLIENT',
-      });
-    } else if (!user.googleId) {
-      user.googleId = googleId;
-      await user.save();
+      return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const tokens = generateTokens(user._id.toString(), user.role);
-    user.refreshToken = tokens.refreshToken;
-    await user.save();
+    let studio = null;
+    if (user.role === 'STUDIO_OWNER') {
+      studio = await Studio.findOne({ ownerId: user._id });
+    }
 
     return res.json({
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
-      ...tokens,
+      studio: studio ? { id: studio._id, name: studio.name, subdomain: studio.subdomain } : null,
     });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Logout - clear refresh token
+ */
+export const logout = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user;
+    if (user) {
+      user.refreshToken = undefined;
+      await user.save();
+    }
+    return res.json({ message: 'Logged out successfully' });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
@@ -371,6 +369,22 @@ export const resetPassword = async (req: Request, res: Response) => {
     await user.save();
 
     return res.json({ message: 'Password has been successfully reset.' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Check if email is already registered (for live signup validation)
+ */
+export const checkEmail = async (req: Request, res: Response) => {
+  const { email } = req.query;
+  try {
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    const existing = await User.findOne({ email: (email as string).toLowerCase() });
+    return res.json({ exists: !!existing });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }

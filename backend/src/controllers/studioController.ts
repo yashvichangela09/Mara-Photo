@@ -53,7 +53,7 @@ export const getMyStudio = async (req: AuthRequest, res: Response) => {
  * Update studio configuration details (Branding, Watermark, Domain)
  */
 export const updateMyStudio = async (req: AuthRequest, res: Response) => {
-  const { name, logoUrl, subdomain, customDomain, watermark } = req.body;
+  const { name, logoUrl, subdomain, customDomain, watermark, paymentDetails } = req.body;
 
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
@@ -95,7 +95,17 @@ export const updateMyStudio = async (req: AuthRequest, res: Response) => {
         logoUrl: watermark.logoUrl !== undefined ? watermark.logoUrl : studio.watermark.logoUrl,
         position: watermark.position || studio.watermark.position,
         opacity: watermark.opacity !== undefined ? watermark.opacity : studio.watermark.opacity,
+        size: watermark.size !== undefined ? watermark.size : studio.watermark.size,
       };
+    }
+
+    if (paymentDetails) {
+      if (!studio.paymentDetails) {
+        studio.paymentDetails = { upiId: '', merchantName: '', uploadedQrUrl: '' };
+      }
+      if (paymentDetails.upiId !== undefined) studio.paymentDetails.upiId = paymentDetails.upiId;
+      if (paymentDetails.merchantName !== undefined) studio.paymentDetails.merchantName = paymentDetails.merchantName;
+      if (paymentDetails.uploadedQrUrl !== undefined) studio.paymentDetails.uploadedQrUrl = paymentDetails.uploadedQrUrl;
     }
 
     await studio.save();

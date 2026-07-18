@@ -15,6 +15,7 @@ export interface IEvent extends Document {
   passwordHash?: string; // used if accessType is 'PASSWORD'
   studioId: mongoose.Types.ObjectId;
   assignedTeamMembers: mongoose.Types.ObjectId[];
+  addToPortfolio?: boolean;
   watermark?: {
     isActive: boolean;
     type: 'TEXT' | 'LOGO';
@@ -52,6 +53,7 @@ const EventSchema = new Schema<IEvent>({
   passwordHash: { type: String },
   studioId: { type: Schema.Types.ObjectId, ref: 'Studio', required: true },
   assignedTeamMembers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  addToPortfolio: { type: Boolean, default: false },
   watermark: {
     isActive: { type: Boolean, default: false },
     type: { type: String, enum: ['TEXT', 'LOGO'], default: 'LOGO' },

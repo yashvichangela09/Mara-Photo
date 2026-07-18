@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import QRCode from 'qrcode';
 import { AuthRequest } from '../middlewares/auth';
-import { Event, Studio, User } from '../models';
+import { Event, Studio, User, Media } from '../models';
 
 /**
  * Creates a new event
@@ -21,6 +21,8 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
     accessType,
     password,
     assignedTeamEmails,
+    addToPortfolio,
+    watermark,
   } = req.body;
 
   try {
@@ -77,6 +79,8 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
       passwordHash,
       studioId: studio._id,
       assignedTeamMembers,
+      addToPortfolio: addToPortfolio || false,
+      watermark: watermark || { isActive: false, type: 'LOGO', position: 'BOTTOM_RIGHT', width: 20, height: 20, opacity: 0.5 },
     });
 
     return res.status(201).json({ message: 'Event created successfully', event: newEvent });
@@ -209,12 +213,18 @@ export const updateEvent = async (req: AuthRequest, res: Response) => {
     accessType,
     password,
     watermark,
+    addToPortfolio,
   } = req.body;
 
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
 
-    const event = await Event.findById(eventId);
+    let event;
+    if (eventId.match(/^[0-9a-fA-F]{24}$/)) {
+      event = await Event.findById(eventId);
+    } else {
+      event = await Event.findOne({ code: eventId });
+    }
     if (!event) return res.status(404).json({ error: 'Event not found' });
 
     // Validate that the request comes from the owner of the studio that owns the event
@@ -241,6 +251,7 @@ export const updateEvent = async (req: AuthRequest, res: Response) => {
     if (coverImageUrl !== undefined) event.coverImageUrl = coverImageUrl;
     if (description !== undefined) event.description = description;
     if (location !== undefined) event.location = location;
+    if (addToPortfolio !== undefined) event.addToPortfolio = addToPortfolio;
 
     if (accessType) {
       event.accessType = accessType;
@@ -355,6 +366,77 @@ export const verifyEventOtp = async (req: Request, res: Response) => {
     }
 
     return res.json({ message: 'OTP verified successfully' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Delete Event Gallery and associated media
+ */
+export const deleteEvent = async (req: Request, res: Response) => {
+  const { eventId } = req.params;
+  try {
+    let event;
+    if (eventId.match(/^[0-9a-fA-F]{24}$/)) {
+      event = await Event.findById(eventId);
+    } else {
+      event = await Event.findOne({ code: eventId });
+    }
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+
+    // Delete associated media documents
+    await Media.deleteMany({ eventId: event._id });
+
+    // Delete event document
+    await Event.findByIdAndDelete(event._id);
+
+    return res.json({ message: 'Event and all its associated media deleted successfully' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Update event portfolio status instantly
+ */
+export const updatePortfolioStatus = async (req: AuthRequest, res: Response) => {
+  const { eventId } = req.params;
+  const { addToPortfolio } = req.body;
+
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+
+    let event;
+    if (eventId.match(/^[0-9a-fA-F]{24}$/)) {
+      event = await Event.findById(eventId);
+    } else {
+      event = await Event.findOne({ code: eventId });
+    }
+    
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+
+    // Validate that the request comes from the owner of the studio that owns the event
+    const studio = await Studio.findOne({ ownerId: req.user._id });
+    if (!studio && req.user.role !== 'SUPER_ADMIN') {
+      if (req.user.role === 'TEAM_MEMBER') {
+        const isAssigned = event.assignedTeamMembers.some(
+          (tmId) => tmId.toString() === req.user?._id.toString()
+        );
+        if (!isAssigned) {
+          return res.status(403).json({ error: 'Unauthorized to update this event' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Unauthorized to update this event' });
+      }
+    }
+
+    if (addToPortfolio !== undefined) {
+      event.addToPortfolio = addToPortfolio;
+      await event.save();
+    }
+
+    return res.json({ message: 'Portfolio status updated successfully', event });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }

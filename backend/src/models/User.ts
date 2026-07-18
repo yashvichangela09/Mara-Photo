@@ -10,7 +10,6 @@ export interface IUser extends Document {
     code: string;
     expiresAt: Date;
   };
-  googleId?: string;
   refreshToken?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -30,7 +29,6 @@ const UserSchema = new Schema<IUser>({
     code: { type: String },
     expiresAt: { type: Date }
   },
-  googleId: { type: String },
   refreshToken: { type: String }
 }, {
   timestamps: true
