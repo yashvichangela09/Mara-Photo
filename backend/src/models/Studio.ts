@@ -6,12 +6,19 @@ export interface IWatermarkSettings {
   logoUrl?: string;
   position: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER';
   opacity: number; // 0 to 1
+  size: number; // 10 to 100 percentage
 }
 
 export interface IUsageLimit {
   photosUploaded: number;
   videosUploaded: number;
   aiSearchesCount: number;
+}
+
+export interface IPaymentDetails {
+  upiId?: string;
+  merchantName?: string;
+  uploadedQrUrl?: string;
 }
 
 export interface IStudio extends Document {
@@ -21,9 +28,10 @@ export interface IStudio extends Document {
   customDomain?: string; // e.g. "gallery.dreamstudio.com"
   ownerId: mongoose.Types.ObjectId;
   watermark: IWatermarkSettings;
-  subscriptionPlan: 'BASIC' | 'STANDARD' | 'ESSENTIAL' | 'PREMIUM';
+  subscriptionPlan: 'STARTER' | 'BASIC' | 'STANDARD' | 'ESSENTIAL' | 'PREMIUM';
   subscriptionStatus: 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'TRIALING' | 'FREE';
   razorpaySubscriptionId?: string;
+  paymentDetails?: IPaymentDetails;
   usage: IUsageLimit;
   createdAt: Date;
   updatedAt: Date;
@@ -44,11 +52,12 @@ const StudioSchema = new Schema<IStudio>({
       enum: ['TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT', 'CENTER'], 
       default: 'BOTTOM_RIGHT' 
     },
-    opacity: { type: Number, default: 0.5, min: 0, max: 1 }
+    opacity: { type: Number, default: 0.5, min: 0, max: 1 },
+    size: { type: Number, default: 20, min: 10, max: 100 }
   },
   subscriptionPlan: { 
     type: String, 
-    enum: ['BASIC', 'STANDARD', 'ESSENTIAL', 'PREMIUM'], 
+    enum: ['STARTER', 'BASIC', 'STANDARD', 'ESSENTIAL', 'PREMIUM'], 
     default: 'BASIC' 
   },
   subscriptionStatus: { 
@@ -57,6 +66,11 @@ const StudioSchema = new Schema<IStudio>({
     default: 'ACTIVE' 
   },
   razorpaySubscriptionId: { type: String },
+  paymentDetails: {
+    upiId: { type: String },
+    merchantName: { type: String },
+    uploadedQrUrl: { type: String }
+  },
   usage: {
     photosUploaded: { type: Number, default: 0 },
     videosUploaded: { type: Number, default: 0 },
