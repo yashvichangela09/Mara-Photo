@@ -10,6 +10,9 @@ import Bill from '../models/Bill';
 import ShootLog from '../models/ShootLog';
 import { Portfolio } from '../models/Portfolio';
 import { EventCover } from '../models/EventCover';
+import { Event } from '../models/Event';
+import { Media } from '../models/Media';
+import { Studio } from '../models/Studio';
 import { authenticateJWT, AuthRequest } from '../middlewares/auth';
 import { uploadFile } from '../services/StorageService';
 
@@ -59,10 +62,46 @@ const uploadMemory = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
 });
 
+// --- REAL-TIME STATS ---
+router.get('/stats', async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    // Find the studio for this user
+    const studio = await Studio.findOne({ ownerId: userId });
+    if (!studio) {
+      return res.json({ events: 0, photos: 0, customers: 0 });
+    }
+
+    const studioId = studio._id;
+
+    // Parallel count queries for performance
+    const [eventsCount, photosCount, customersCount] = await Promise.all([
+      Event.countDocuments({ studioId }),
+      Media.countDocuments({ studioId, type: 'PHOTO' }),
+      Customer.countDocuments({}),
+    ]);
+
+    return res.json({
+      events: eventsCount,
+      photos: photosCount,
+      customers: customersCount,
+      studioName: studio.name,
+      subscriptionPlan: studio.subscriptionPlan,
+    });
+  } catch (error: any) {
+    console.error('Stats error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // --- CUSTOMERS ---
 router.get('/customers', async (req: AuthRequest, res) => {
   try {
-    const data = await Customer.find().sort({ createdAt: -1 });
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.json([]);
+    const data = await Customer.find({ studioId: studio._id }).sort({ createdAt: -1 });
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -71,7 +110,9 @@ router.get('/customers', async (req: AuthRequest, res) => {
 
 router.post('/customers', async (req: AuthRequest, res) => {
   try {
-    const customer = new Customer(req.body);
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.status(403).json({ error: 'Studio not found' });
+    const customer = new Customer({ ...req.body, studioId: studio._id });
     await customer.save();
     res.json(customer);
   } catch (error) {
@@ -91,7 +132,9 @@ router.delete('/customers/:id', async (req: AuthRequest, res) => {
 // --- TEAM ---
 router.get('/team', async (req: AuthRequest, res) => {
   try {
-    const data = await Team.find().sort({ createdAt: -1 });
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.json([]);
+    const data = await Team.find({ studioId: studio._id }).sort({ createdAt: -1 });
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -100,7 +143,9 @@ router.get('/team', async (req: AuthRequest, res) => {
 
 router.post('/team', async (req: AuthRequest, res) => {
   try {
-    const member = new Team(req.body);
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.status(403).json({ error: 'Studio not found' });
+    const member = new Team({ ...req.body, studioId: studio._id });
     await member.save();
     res.json(member);
   } catch (error) {
@@ -120,7 +165,9 @@ router.delete('/team/:id', async (req: AuthRequest, res) => {
 // --- BOOKINGS ---
 router.get('/bookings', async (req: AuthRequest, res) => {
   try {
-    const data = await Booking.find().sort({ createdAt: -1 });
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.json([]);
+    const data = await Booking.find({ studioId: studio._id }).sort({ createdAt: -1 });
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -129,7 +176,9 @@ router.get('/bookings', async (req: AuthRequest, res) => {
 
 router.post('/bookings', async (req: AuthRequest, res) => {
   try {
-    const booking = new Booking(req.body);
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.status(403).json({ error: 'Studio not found' });
+    const booking = new Booking({ ...req.body, studioId: studio._id });
     await booking.save();
     res.json(booking);
   } catch (error) {
@@ -149,7 +198,9 @@ router.delete('/bookings/:id', async (req: AuthRequest, res) => {
 // --- QUOTATIONS ---
 router.get('/quotations', async (req: AuthRequest, res) => {
   try {
-    const data = await Quotation.find().sort({ createdAt: -1 });
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.json([]);
+    const data = await Quotation.find({ studioId: studio._id }).sort({ createdAt: -1 });
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -158,7 +209,9 @@ router.get('/quotations', async (req: AuthRequest, res) => {
 
 router.post('/quotations', async (req: AuthRequest, res) => {
   try {
-    const quotation = new Quotation(req.body);
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.status(403).json({ error: 'Studio not found' });
+    const quotation = new Quotation({ ...req.body, studioId: studio._id });
     await quotation.save();
     res.json(quotation);
   } catch (error) {
@@ -178,7 +231,9 @@ router.delete('/quotations/:id', async (req: AuthRequest, res) => {
 // --- BILLS ---
 router.get('/bills', async (req: AuthRequest, res) => {
   try {
-    const data = await Bill.find().sort({ createdAt: -1 });
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.json([]);
+    const data = await Bill.find({ studioId: studio._id }).sort({ createdAt: -1 });
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -187,7 +242,9 @@ router.get('/bills', async (req: AuthRequest, res) => {
 
 router.post('/bills', async (req: AuthRequest, res) => {
   try {
-    const bill = new Bill(req.body);
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.status(403).json({ error: 'Studio not found' });
+    const bill = new Bill({ ...req.body, studioId: studio._id });
     await bill.save();
     res.json(bill);
   } catch (error) {
@@ -207,7 +264,9 @@ router.delete('/bills/:id', async (req: AuthRequest, res) => {
 // --- SHOOTS (Calendar) ---
 router.get('/shoots', async (req: AuthRequest, res) => {
   try {
-    const data = await ShootLog.find().sort({ date: 1 });
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.json([]);
+    const data = await ShootLog.find({ studioId: studio._id }).sort({ date: 1 });
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -216,7 +275,9 @@ router.get('/shoots', async (req: AuthRequest, res) => {
 
 router.post('/shoots', async (req: AuthRequest, res) => {
   try {
-    const shoot = new ShootLog(req.body);
+    const studio = await Studio.findOne({ ownerId: req.user!._id });
+    if (!studio) return res.status(403).json({ error: 'Studio not found' });
+    const shoot = new ShootLog({ ...req.body, studioId: studio._id });
     await shoot.save();
     res.json(shoot);
   } catch (error) {
