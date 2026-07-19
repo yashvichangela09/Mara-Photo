@@ -1,1 +1,3 @@
-"C:\Program Files\MongoDB\Server\8.0\bin\mongod.exe" --dbpath "d:\Mara Photo\Mara Photo\backend\mongodb_data" > mongo_log.txt 2>&1
+@echo off
+if not exist "%~dp0backend\mongodb_data" mkdir "%~dp0backend\mongodb_data"
+"C:\Program Files\MongoDB\Server\8.0\bin\mongod.exe" --dbpath "%~dp0backend\mongodb_data" > "%~dp0mongo_log.txt" 2>&1

@@ -166,9 +166,11 @@ export default function HomePage() {
   const [simState, setSimState] = useState<'idle' | 'scanning' | 'success'>('idle');
   const [sliderVal, setSliderVal] = useState<number>(50);
   const [heroTab, setHeroTab] = useState<'scanner' | 'enhancer'>('scanner');
+  const [sliderDirection, setSliderDirection] = useState<'forward' | 'backward'>('forward');
 
-  // Autoplay loop simulation
+  // Autoplay loop simulation for Face Match
   useEffect(() => {
+    if (heroTab !== 'scanner') return;
     let timer: NodeJS.Timeout;
     const runLoop = () => {
       if (simState === 'idle') {
@@ -181,7 +183,25 @@ export default function HomePage() {
     };
     runLoop();
     return () => clearTimeout(timer);
-  }, [simState]);
+  }, [simState, heroTab]);
+
+  // Autoplay loop simulation for AI Enhancer slider oscillation
+  useEffect(() => {
+    if (heroTab !== 'enhancer') return;
+    const interval = setInterval(() => {
+      setSliderVal((prev) => {
+        if (prev >= 85) {
+          setSliderDirection('backward');
+          return prev - 1;
+        } else if (prev <= 15) {
+          setSliderDirection('forward');
+          return prev + 1;
+        }
+        return sliderDirection === 'forward' ? prev + 1 : prev - 1;
+      });
+    }, 30);
+    return () => clearInterval(interval);
+  }, [heroTab, sliderDirection]);
 
   const handleHomeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1389,7 +1409,7 @@ export default function HomePage() {
                 </div>
 
                 {heroTab === 'scanner' ? (
-                  <div className="phone-content">
+                  <div className="phone-content" style={{ textAlign: 'center' }}>
                     {simState === 'idle' && (
                       <>
                         <div className="phone-title-block">
@@ -1465,9 +1485,10 @@ export default function HomePage() {
                   </div>
                 ) : (
                   <div className="phone-content" style={{ textAlign: 'center' }}>
-                    <div>
-                      <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '16px', fontWeight: 300, color: '#09090b', marginBottom: '4px' }}>AI Enhancer</h3>
-                      <p style={{ fontSize: '8px', color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Slide to color correct & watermark</p>
+                    <div className="phone-title-block" style={{ textAlign: 'center', width: '100%' }}>
+                      <img src="/logo.png" alt="Mara Photo" />
+                      <h3 style={{ fontWeight: 800 }}>AI Enhancer</h3>
+                      <p style={{ animation: 'pulseGlow 2s ease-in-out infinite' }}>Autoplay Simulation Running</p>
                     </div>
                     <div className="enhancer-wrap">
                       <img src="/wedding.jpg" alt="Original" className="enhancer-before" />
