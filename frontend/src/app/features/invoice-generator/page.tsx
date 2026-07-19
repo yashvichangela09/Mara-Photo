@@ -1,116 +1,235 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import PublicWrapper from '../../../components/PublicWrapper';
 import Link from 'next/link';
-import { ArrowRight, ChevronRight, QrCode, Calendar, ScanFace, Smile, Settings, CreditCard, Globe, LayoutDashboard, Camera } from 'lucide-react';
+import { ArrowRight, Receipt, Percent, FileText, CheckCircle2, ChevronDown } from 'lucide-react';
 
 export default function Page() {
+  const [activeFaq, setActiveFaq] = useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setActiveFaq(activeFaq === index ? null : index);
+  };
+
+  const features = [
+    {
+      icon: <Receipt className="w-6 h-6 text-[#c5a880]" />,
+      title: "GST-Compliant Tax Invoices",
+      desc: "Generate professional tax invoices detailing GST percentages, local SGST/CGST rules, and legal company credentials."
+    },
+    {
+      icon: <Percent className="w-6 h-6 text-[#c5a880]" />,
+      title: "Token & Balance Ledger",
+      desc: "Record booking advance deposits, token paid milestones, and let the engine dynamically calculate the balance remaining."
+    },
+    {
+      icon: <FileText className="w-6 h-6 text-[#c5a880]" />,
+      title: "Instant PDF Downloads",
+      desc: "Generate print-ready A4 invoices with clean templates. Download or print them directly with one simple click."
+    },
+    {
+      icon: <CheckCircle2 className="w-6 h-6 text-[#c5a880]" />,
+      title: "Event Gallery Linkage",
+      desc: "Link booking records to events to pre-fill client names, shoot schedules, and event details automatically."
+    }
+  ];
+
+  const steps = [
+    {
+      num: "01",
+      title: "Select Created Event",
+      desc: "Choose an active event from the dropdown, which automatically pulls client name, date, and phone numbers."
+    },
+    {
+      num: "02",
+      title: "Enter Shoot Values",
+      desc: "Input the contract package pricing value and the advance token paid. The engine computes the balance left."
+    },
+    {
+      num: "03",
+      title: "Print or Send PDF",
+      desc: "Click the action icon to view a premium print layout, select 'Save as PDF', and send it straight to your client."
+    }
+  ];
+
+  const faqs = [
+    {
+      q: "Does it support GST invoice calculations?",
+      a: "Yes. You can customize tax rates (e.g. 18% GST for photography services) and the system will calculate SGST, CGST, and IGST breakdowns automatically."
+    },
+    {
+      q: "Can I track payments made in multiple installments?",
+      a: "Absolutely. You can edit booking records, update token amounts as clients make partial payments, and see the remaining balance due update in real-time."
+    },
+    {
+      q: "Can I customize the invoice branding?",
+      a: "Yes. Invoices pull your studio logo, address, email, custom domain, and billing terms directly from your branding settings."
+    },
+    {
+      q: "Can I generate price estimations before booking?",
+      a: "Yes. Our platform includes a dedicated Quotations tool. You can compile a quote draft, download the A4 print sheet, and send it to potential leads."
+    }
+  ];
+
   return (
     <PublicWrapper>
-      <main className="bg-[#faf9f6] text-[#09090b]">
+      <main className="bg-[#faf9f6] text-[#09090b] font-poppins">
         
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-20 pb-16 lg:pt-28 lg:pb-24 border-b border-[#e3d8c8]/30">
+        <section className="relative overflow-hidden pt-24 pb-20 lg:pt-32 lg:pb-28 border-b border-[#e3d8c8]/30">
           <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
             <div className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full bg-[#e3d8c8]/25 opacity-40 blur-3xl" />
             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full bg-[#c5a880]/10 opacity-30 blur-3xl" />
           </div>
 
           <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 text-center">
-            <span className="inline-block px-4 py-1.5 bg-[#f5f2eb] text-[#c5a880] border border-[#c5a880]/15 text-[11px] font-black uppercase tracking-widest rounded-full mb-6 font-poppins shadow-sm">
-              GST Compliant Billing
+            <span className="inline-block px-4 py-1.5 bg-[#f5f2eb] text-[#c5a880] border border-[#c5a880]/15 text-[11px] font-black uppercase tracking-widest rounded-full mb-6 shadow-sm">
+              GST Business Billing
             </span>
-            <h1 className="font-serif-luxury text-4xl sm:text-5xl lg:text-6xl font-light text-[#09090b] leading-[1.15] mb-6">
-              Professional Invoicing & Payment Automation
+            <h1 className="font-serif-luxury text-4xl sm:text-5xl lg:text-7xl font-light text-[#09090b] leading-[1.15] mb-6 max-w-4xl mx-auto">
+              Professional Invoicing and <span className="italic text-[#c5a880]">Balance Tracking</span>
             </h1>
-            <p className="font-poppins text-base sm:text-lg text-gray-500 mb-10 leading-relaxed max-w-2xl mx-auto font-medium">
-              Create and send premium branded invoices to clients instantly. Accept online payments, UPI, and track transaction status in real-time.
+            <p className="text-base sm:text-lg text-gray-500 mb-10 leading-relaxed max-w-3xl mx-auto font-medium">
+              Take control of your studio accounting. Create estimates, generate GST invoices, track client advances, and monitor outstanding payments effortlessly.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link
                 href="/signup"
-                className="font-poppins inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-white bg-[#09090b] hover:bg-[#c5a880] hover:text-[#09090b] px-9 py-4 rounded-full transition-all duration-300 shadow-md hover:-translate-y-0.5"
+                className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-white bg-[#09090b] hover:bg-[#c5a880] hover:text-[#09090b] px-9 py-4 rounded-full transition-all duration-300 shadow-md hover:-translate-y-0.5"
               >
-                Start Free Account
+                Start Invoicing Now
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/#contact"
-                className="font-poppins inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-[#09090b] border border-[#09090b]/20 px-9 py-4 rounded-full hover:bg-slate-100 transition-all duration-300"
+                className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-[#09090b] border border-[#09090b]/20 px-9 py-4 rounded-full hover:bg-[#f5f2eb] transition-all duration-300"
               >
-                Consult Sales
+                Schedule Live Demo
               </Link>
             </div>
           </div>
         </section>
 
-        {/* Symmetrical Details Grid */}
+        {/* Core Value Grid */}
         <section className="py-24 bg-white border-b border-[#e3d8c8]/30">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
+            <div className="max-w-3xl mx-auto mb-16">
+              <h2 className="font-serif-luxury text-3xl sm:text-4xl lg:text-5xl font-light mb-6">
+                Premium Invoicing Tool Built for <span className="italic text-[#c5a880]">Professional Studios</span>
+              </h2>
+              <p className="text-gray-500 text-sm sm:text-base font-medium">
+                Eliminate manual calculations. Keep your photography bookkeeping organized and professional.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {features.map((f, i) => (
+                <div key={i} className="bg-[#faf9f6] border border-[#e3d8c8]/30 p-8 rounded-3xl text-left hover:shadow-lg transition-all duration-300 group hover:-translate-y-1">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-[#e3d8c8]/40 flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#09090b] group-hover:text-white transition-all">
+                    {f.icon}
+                  </div>
+                  <h3 className="text-lg font-bold text-[#09090b] mb-3">{f.title}</h3>
+                  <p className="text-gray-500 text-xs sm:text-sm leading-relaxed font-medium">{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Process Steps */}
+        <section className="py-24 bg-[#faf9f6] border-b border-[#e3d8c8]/30">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-              
-              {/* Left Column: Mockup wrapper */}
-              <div className="lg:col-span-5 flex justify-center">
-                <div className="w-full max-w-[360px] bg-[#faf9f6] border border-slate-100 rounded-3xl p-3 shadow-md relative flex items-center justify-center min-h-[300px]">
-                  
-      <div className="w-full bg-white rounded-xl shadow-lg border border-slate-100 p-4 text-slate-800 text-left font-poppins relative flex flex-col justify-between h-[240px] select-none">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <span className="text-[9px] font-bold text-slate-400 uppercase">Studio Invoice</span>
-          <span className="text-[8px] bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider">Paid</span>
-        </div>
-        <div className="space-y-2 flex-1 mt-3">
-          <div className="flex justify-between text-[8px] text-slate-400 font-semibold">
-            <span>Bill To: Mehta Family</span>
-            <span>Date: 24 May 2026</span>
-          </div>
-          <div className="border border-slate-100 rounded-lg p-2 bg-slate-50 space-y-1.5">
-            <div className="flex justify-between text-[9px] font-bold text-slate-700">
-              <span>Wedding Photography Cover</span>
-              <span>₹85,000</span>
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <span className="text-[10px] font-bold text-[#c5a880] uppercase tracking-widest bg-[#f5f2eb] px-3.5 py-1.5 rounded-full border border-[#c5a880]/15">
+                Quick Setup
+              </span>
+              <h2 className="font-serif-luxury text-3xl sm:text-4xl lg:text-5xl font-light mt-6">
+                Create an Invoice in <span className="italic text-[#c5a880]">60 Seconds</span>
+              </h2>
             </div>
-            <div className="flex justify-between text-[7px] text-slate-400 font-medium">
-              <span>Pre-Wedding + 2 Day Event Shoot</span>
-              <span>Qty: 1</span>
+
+            <div className="grid lg:grid-cols-3 gap-12 relative">
+              {steps.map((s, i) => (
+                <div key={i} className="relative bg-white border border-[#e3d8c8]/20 p-10 rounded-3xl shadow-sm hover:shadow-md transition-all">
+                  <div className="absolute top-6 right-8 text-5xl font-serif-luxury font-bold text-[#c5a880]/20 select-none">
+                    {s.num}
+                  </div>
+                  <h3 className="text-xl font-bold text-[#09090b] mb-4 mt-2">{s.title}</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed font-medium">{s.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="flex justify-between items-center pt-1.5 border-t border-slate-100">
-            <span className="text-[8px] text-slate-400 font-bold">Total Received</span>
-            <span className="text-xs font-black text-slate-800">₹85,000</span>
+        </section>
+
+        {/* Comparison Table */}
+        <section className="py-24 bg-white border-b border-[#e3d8c8]/30">
+          <div className="max-w-5xl mx-auto px-6 lg:px-8">
+            <h2 className="font-serif-luxury text-3xl sm:text-4xl lg:text-5xl font-light text-center mb-16">
+              Modern Billing vs <span className="italic text-[#c5a880]">Excel Sheets</span>
+            </h2>
+
+            <div className="border border-[#e3d8c8]/40 rounded-3xl overflow-hidden shadow-sm">
+              <table className="w-full text-left border-collapse font-poppins">
+                <thead>
+                  <tr className="bg-[#09090b] text-white">
+                    <th className="p-6 text-sm font-bold uppercase tracking-wider">Metrics</th>
+                    <th className="p-6 text-sm font-bold uppercase tracking-wider text-center">Excel & Generic Templates</th>
+                    <th className="p-6 text-sm font-bold uppercase tracking-wider text-center text-[#c5a880]">Mara Photo Invoicing</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e3d8c8]/20">
+                  <tr>
+                    <td className="p-6 text-sm font-bold text-slate-800">Integration</td>
+                    <td className="p-6 text-sm text-gray-500 text-center font-medium">Completely disconnected, re-type client info</td>
+                    <td className="p-6 text-sm text-center font-bold text-emerald-600 bg-emerald-50/20">Auto-links client & event records</td>
+                  </tr>
+                  <tr>
+                    <td className="p-6 text-sm font-bold text-slate-800">Payment Status</td>
+                    <td className="p-6 text-sm text-gray-500 text-center font-medium">Manual checks and logbooks</td>
+                    <td className="p-6 text-sm text-center font-bold text-emerald-600 bg-emerald-50/20">Real-time status indicators</td>
+                  </tr>
+                  <tr>
+                    <td className="p-6 text-sm font-bold text-slate-800">Print Formatting</td>
+                    <td className="p-6 text-sm text-gray-500 text-center font-medium">Messy margins, complex layouts</td>
+                    <td className="p-6 text-sm text-center font-bold text-emerald-600 bg-emerald-50/20">A4 PDF print presets</td>
+                  </tr>
+                  <tr>
+                    <td className="p-6 text-sm font-bold text-slate-800">GST Compliance</td>
+                    <td className="p-6 text-sm text-gray-500 text-center font-medium">Complex formula coding</td>
+                    <td className="p-6 text-sm text-center font-bold text-emerald-600 bg-emerald-50/20">Automatic SGST / CGST breaks</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
 
+        {/* FAQs */}
+        <section className="py-24 bg-[#faf9f6] border-b border-[#e3d8c8]/30">
+          <div className="max-w-4xl mx-auto px-6 lg:px-8">
+            <h2 className="font-serif-luxury text-3xl sm:text-4xl lg:text-5xl font-light text-center mb-16">
+              Frequently Asked <span className="italic text-[#c5a880]">Questions</span>
+            </h2>
+
+            <div className="space-y-4">
+              {faqs.map((faq, i) => (
+                <div key={i} className="bg-white border border-[#e3d8c8]/25 rounded-2xl overflow-hidden transition-all duration-300">
+                  <button
+                    onClick={() => toggleFaq(i)}
+                    className="w-full p-6 flex justify-between items-center text-left font-bold text-slate-800 hover:text-[#c5a880] transition-colors"
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${activeFaq === i ? 'rotate-180' : ''}`} />
+                  </button>
+                  {activeFaq === i && (
+                    <div className="px-6 pb-6 text-sm text-gray-500 leading-relaxed font-medium">
+                      {faq.a}
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              {/* Right Column: Bullets */}
-              <div className="lg:col-span-7 space-y-8 text-left font-poppins">
-                <div>
-                  <span className="text-[10px] font-bold text-[#c5a880] uppercase tracking-widest bg-[#f5f2eb] px-3.5 py-1.5 rounded-full">
-                    Core Benefits
-                  </span>
-                  <h2 className="font-serif-luxury text-3xl sm:text-4xl font-light text-[#09090b] leading-tight mt-4">
-                    Designed to give you <span className="italic text-[#c5a880]">complete control</span>
-                  </h2>
-                </div>
-
-                <ul className="space-y-5">
-                    <li className="flex items-start gap-3" key={0}>
-                      <div className="w-5.5 h-5.5 rounded-full bg-[#f5f2eb] text-[#c5a880] border border-[#c5a880]/20 flex items-center justify-center shrink-0 mt-0.5 shadow-sm font-bold text-xs">⚡</div>
-                      <span className="text-sm sm:text-[15px] font-bold text-slate-700 leading-snug">Generate GST-compliant invoices in one click</span>
-                    </li>
-                    <li className="flex items-start gap-3" key={1}>
-                      <div className="w-5.5 h-5.5 rounded-full bg-[#f5f2eb] text-[#c5a880] border border-[#c5a880]/20 flex items-center justify-center shrink-0 mt-0.5 shadow-sm font-bold text-xs">⚡</div>
-                      <span className="text-sm sm:text-[15px] font-bold text-slate-700 leading-snug">Accept secure digital payments and credit cards</span>
-                    </li>
-                    <li className="flex items-start gap-3" key={2}>
-                      <div className="w-5.5 h-5.5 rounded-full bg-[#f5f2eb] text-[#c5a880] border border-[#c5a880]/20 flex items-center justify-center shrink-0 mt-0.5 shadow-sm font-bold text-xs">⚡</div>
-                      <span className="text-sm sm:text-[15px] font-bold text-slate-700 leading-snug">Automated payment reminders and tracking</span>
-                    </li>
-                </ul>
-              </div>
-
+              ))}
             </div>
           </div>
         </section>
@@ -125,13 +244,13 @@ export default function Page() {
             <h2 className="font-serif-luxury text-3xl sm:text-4xl lg:text-5xl font-light text-white">
               Ready to elevate your <span className="italic text-[#c5a880]">client experience?</span>
             </h2>
-            <p className="text-gray-400 font-poppins text-sm sm:text-base max-w-lg mx-auto font-medium">
-              Join elite photography studios delivering live moments instantly. Start free today.
+            <p className="text-gray-400 text-sm sm:text-base max-w-lg mx-auto font-medium leading-relaxed">
+              Join thousands of premium studios. Deliver photos live at your next event.
             </p>
-            <div className="pt-2">
+            <div className="pt-4">
               <Link
                 href="/signup"
-                className="font-poppins inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-[#09090b] bg-[#c5a880] hover:bg-white px-9 py-4 rounded-full transition-all duration-300 shadow-md"
+                className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-[#09090b] bg-[#c5a880] hover:bg-white px-9 py-4 rounded-full transition-all duration-300 shadow-md"
               >
                 Get Started Now
                 <ArrowRight className="w-4 h-4" />

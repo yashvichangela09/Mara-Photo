@@ -40,7 +40,6 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [emailExists, setEmailExists] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
-  const [googlePopupActive, setGooglePopupActive] = useState(false);
 
   const { register, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -80,7 +79,6 @@ export default function SignupPage() {
   const handleGoogleLogin = async (email: string, name: string, googleId: string) => {
     setLoading(true);
     setError('');
-    setGooglePopupActive(false);
     try {
       const res = await apiClient.post('/auth/google-login', {
         email,
@@ -706,7 +704,7 @@ export default function SignupPage() {
 
             <button
               type="button"
-              onClick={() => setGooglePopupActive(true)}
+              onClick={handleRealGoogleSignIn}
               className="w-full flex items-center justify-center gap-3 border border-slate-200 rounded-[12px] bg-white text-slate-700 font-bold h-[56px] hover:bg-slate-50 hover:shadow-md transition-all duration-300 cursor-pointer"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -724,21 +722,6 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
-
-      {googlePopupActive && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative animate-scaleUp">
-            <button onClick={() => setGooglePopupActive(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800">
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-xl font-black mb-4">Google Sign-In</h3>
-            <p className="text-sm text-slate-500 mb-6 font-medium">Use the official popup below to continue with Google.</p>
-            <button onClick={handleRealGoogleSignIn} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md">
-              Launch Google Popup
-            </button>
-          </div>
-        </div>
-      )}
       <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
     </PublicWrapper>
   );
