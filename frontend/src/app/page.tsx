@@ -377,6 +377,10 @@ export default function HomePage() {
           0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
           50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
         }
+        @keyframes textPulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
+        }
         .phone-frame {
           position: relative;
           z-index: 10;
@@ -468,13 +472,13 @@ export default function HomePage() {
         .phone-title-block h3 {
           font-family: 'Cormorant Garamond', serif;
           font-size: 18px;
-          font-weight: 300;
+          font-weight: 800;
           color: #09090b;
           margin-bottom: 4px;
         }
         .phone-title-block p {
           font-size: 9px;
-          font-weight: 700;
+          font-weight: 800;
           color: #c5a880;
           text-transform: uppercase;
           letter-spacing: 0.1em;
@@ -1412,15 +1416,15 @@ export default function HomePage() {
                   <div className="phone-content" style={{ textAlign: 'center' }}>
                     {simState === 'idle' && (
                       <>
-                        <div className="phone-title-block">
+                        <div className="phone-title-block" style={{ textAlign: 'center', width: '100%' }}>
                           <img src="/logo.png" alt="Mara Photo" />
-                          <h3>Guest Photo Search</h3>
-                          <p style={{ animation: 'pulseGlow 2s ease-in-out infinite' }}>Autoplay Simulation Running</p>
+                          <h3 style={{ fontWeight: 800 }}>Guest Photo Search</h3>
+                          <p style={{ animation: 'textPulse 2s ease-in-out infinite', fontWeight: 800 }}>Autoplay Simulation Running</p>
                         </div>
                         <div className="phone-viewfinder">
                           <img src="/portrait.jpg" alt="Guest Selfie" />
                           <div style={{ position: 'absolute', top: '8px', left: '8px', color: '#c5a880', opacity: 0.6 }}><Camera className="w-4 h-4" /></div>
-                          <div style={{ position: 'absolute', bottom: '8px', right: '8px', fontSize: '8px', fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.4)', padding: '2px 8px', borderRadius: '9999px', backdropFilter: 'blur(4px)' }}>Viewfinder</div>
+                          <div style={{ position: 'absolute', bottom: '8px', right: '8px', fontSize: '8px', fontWeight: 800, color: '#fff', background: 'rgba(0,0,0,0.4)', padding: '2px 8px', borderRadius: '9999px', backdropFilter: 'blur(4px)' }}>Mara Photo</div>
                         </div>
                         <button className="phone-scan-btn" onClick={() => setSimState('scanning')}>
                           <Zap className="w-3 h-3" style={{ color: '#c5a880' }} /> Try AI Face Scanner
@@ -1430,10 +1434,10 @@ export default function HomePage() {
 
                     {simState === 'scanning' && (
                       <>
-                        <div className="phone-title-block">
+                        <div className="phone-title-block" style={{ textAlign: 'center', width: '100%' }}>
                           <img src="/logo.png" alt="Mara Photo" />
-                          <h3>Scanning Face...</h3>
-                          <p style={{ animation: 'pulseGlow 1.5s ease-in-out infinite' }}>Analyzing structures</p>
+                          <h3 style={{ fontWeight: 800 }}>Scanning Face...</h3>
+                          <p style={{ animation: 'textPulse 1.5s ease-in-out infinite', fontWeight: 800 }}>Analyzing structures</p>
                         </div>
                         <div className="phone-viewfinder" style={{ border: '2px solid #c5a880' }}>
                           <img src="/portrait.jpg" alt="Guest Selfie" style={{ filter: 'brightness(0.9)' }} />
@@ -1445,8 +1449,8 @@ export default function HomePage() {
                           </div>
                         </div>
                         <div style={{ textAlign: 'center', padding: '12px 0' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '10px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#c5a880', animation: 'pulseGlow 1s ease-in-out infinite' }} />
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '10px', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#c5a880', animation: 'textPulse 1s ease-in-out infinite' }} />
                             Matching 1,247 photos...
                           </div>
                         </div>
@@ -1455,10 +1459,10 @@ export default function HomePage() {
 
                     {simState === 'success' && (
                       <>
-                        <div className="phone-title-block">
+                        <div className="phone-title-block" style={{ textAlign: 'center', width: '100%' }}>
                           <img src="/logo.png" alt="Mara Photo" />
-                          <h3>Matches Found!</h3>
-                          <p style={{ color: '#16a34a' }}>Analysis complete</p>
+                          <h3 style={{ fontWeight: 800 }}>Matches Found!</h3>
+                          <p style={{ color: '#16a34a', fontWeight: 800 }}>Analysis complete</p>
                         </div>
                         <div className="match-grid">
                           {["/wedding.jpg","/gala.jpg","/party.jpg","/rings.jpg"].map((url, i) => (
@@ -1488,7 +1492,7 @@ export default function HomePage() {
                     <div className="phone-title-block" style={{ textAlign: 'center', width: '100%' }}>
                       <img src="/logo.png" alt="Mara Photo" />
                       <h3 style={{ fontWeight: 800 }}>AI Enhancer</h3>
-                      <p style={{ animation: 'pulseGlow 2s ease-in-out infinite' }}>Autoplay Simulation Running</p>
+                      <p style={{ animation: 'textPulse 2s ease-in-out infinite', fontWeight: 800 }}>Autoplay Simulation Running</p>
                     </div>
                     <div className="enhancer-wrap">
                       <img src="/wedding.jpg" alt="Original" className="enhancer-before" />
