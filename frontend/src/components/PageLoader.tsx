@@ -8,27 +8,28 @@ export default function PageLoader() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Elegant, smooth progress simulation
+    // Elegant, smooth progress simulation that animates all the way to 100%
     const progressInterval = setInterval(() => {
       setProgress(prev => {
-        const next = prev + Math.random() * 8;
-        if (next >= 95) return 95;
+        if (prev >= 100) {
+          clearInterval(progressInterval);
+          setFadeOut(true);
+          setTimeout(() => setVisible(false), 600);
+          return 100;
+        }
+        const next = prev + Math.random() * 10 + 2;
+        if (next >= 100) {
+          clearInterval(progressInterval);
+          setFadeOut(true);
+          setTimeout(() => setVisible(false), 600);
+          return 100;
+        }
         return next;
       });
     }, 150);
 
-    // Fade out sequence
-    const fadeTimer = setTimeout(() => {
-      setProgress(100);
-      setFadeOut(true);
-    }, 2000); // Shorter, snappier loading time (2 seconds)
-    
-    const hideTimer = setTimeout(() => setVisible(false), 2600);
-
     return () => {
       clearInterval(progressInterval);
-      clearTimeout(fadeTimer);
-      clearTimeout(hideTimer);
     };
   }, []);
 

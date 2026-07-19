@@ -18,11 +18,18 @@ const generateTokens = (userId: string, role: string) => {
  * Register a new Studio Owner and auto-initialize their Studio profile
  */
 export const registerStudioOwner = async (req: Request, res: Response) => {
-  const { name, email, password, phone, studioName, subdomain, websiteLink, logoUrl } = req.body;
+  const { name, email, password, phone, studioName, subdomain, websiteLink, logoUrl, role } = req.body;
+  const isClient = role === 'CLIENT';
 
   try {
-    if (!name || !email || !password || !phone || !studioName || !subdomain) {
-      return res.status(400).json({ error: 'All fields are required' });
+    if (isClient) {
+      if (!name || !email || !password || !phone) {
+        return res.status(400).json({ error: 'All fields are required' });
+      }
+    } else {
+      if (!name || !email || !password || !phone || !studioName || !subdomain) {
+        return res.status(400).json({ error: 'All fields are required' });
+      }
     }
 
     if (!/^[6-9]\d{9}$/.test(phone)) {
@@ -39,10 +46,13 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
-    const cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
-    const existingStudio = await Studio.findOne({ subdomain: cleanSubdomain });
-    if (existingStudio) {
-      return res.status(400).json({ error: 'Subdomain already taken' });
+    let cleanSubdomain = '';
+    if (!isClient) {
+      cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      const existingStudio = await Studio.findOne({ subdomain: cleanSubdomain });
+      if (existingStudio) {
+        return res.status(400).json({ error: 'Subdomain already taken' });
+      }
     }
 
     // Hash password
@@ -55,31 +65,34 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
       email: email.toLowerCase(),
       phone,
       passwordHash,
-      role: 'STUDIO_OWNER',
+      role: isClient ? 'CLIENT' : 'STUDIO_OWNER',
     });
 
-    // Create studio
-    const newStudio = await Studio.create({
-      name: studioName,
-      subdomain: cleanSubdomain,
-      ownerId: newUser._id,
-      subscriptionPlan: 'BASIC',
-      subscriptionStatus: 'FREE',
-      customDomain: websiteLink || undefined,
-      logoUrl: logoUrl || undefined,
-    });
+    let newStudio = null;
+    if (!isClient) {
+      // Create studio
+      newStudio = await Studio.create({
+        name: studioName,
+        subdomain: cleanSubdomain,
+        ownerId: newUser._id,
+        subscriptionPlan: 'BASIC',
+        subscriptionStatus: 'FREE',
+        customDomain: websiteLink || undefined,
+        logoUrl: logoUrl || undefined,
+      });
+    }
 
     const tokens = generateTokens(newUser._id.toString(), newUser.role);
     newUser.refreshToken = tokens.refreshToken;
     await newUser.save();
 
-    // Send Welcome Email asynchronously (don't block the response)
-    sendWelcomeEmail(newUser.email, newUser.name, true).catch(err => console.error("Welcome Email Failed:", err));
+    // Send Welcome Email asynchronously
+    sendWelcomeEmail(newUser.email, newUser.name, !isClient).catch(err => console.error("Welcome Email Failed:", err));
 
     return res.status(201).json({
-      message: 'Studio registered successfully',
+      message: isClient ? 'User registered successfully' : 'Studio registered successfully',
       user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role, phone: newUser.phone },
-      studio: { id: newStudio._id, name: newStudio.name, subdomain: newStudio.subdomain, logoUrl: newStudio.logoUrl, customDomain: newStudio.customDomain },
+      studio: newStudio ? { id: newStudio._id, name: newStudio.name, subdomain: newStudio.subdomain, logoUrl: newStudio.logoUrl, customDomain: newStudio.customDomain } : null,
       ...tokens,
     });
   } catch (err: any) {
@@ -386,6 +399,67 @@ export const checkEmail = async (req: Request, res: Response) => {
     const existing = await User.findOne({ email: (email as string).toLowerCase() });
     return res.json({ exists: !!existing });
   } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Google Sign-In / Sign-Up handler (automatically registers new users)
+ */
+export const googleLogin = async (req: Request, res: Response) => {
+  const { email, name, googleId, role } = req.body;
+  const targetRole = role === 'CLIENT' ? 'CLIENT' : 'STUDIO_OWNER';
+
+  try {
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (!user) {
+      // If user does not exist, register them
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(Math.random().toString(36), salt);
+
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email: email.toLowerCase(),
+        phone: '9999999999', // fallback phone
+        passwordHash,
+        role: targetRole,
+      });
+
+      if (targetRole === 'STUDIO_OWNER') {
+        const subdomain = (name || email.split('@')[0]).toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(100 + Math.random() * 900);
+        await Studio.create({
+          name: (name || email.split('@')[0]) + ' Studio',
+          subdomain,
+          ownerId: user._id,
+          subscriptionPlan: 'BASIC',
+          subscriptionStatus: 'FREE',
+        });
+      }
+    }
+
+    // Generate tokens
+    const tokens = generateTokens(user._id.toString(), user.role);
+    user.refreshToken = tokens.refreshToken;
+    await user.save();
+
+    let studio = null;
+    if (user.role === 'STUDIO_OWNER') {
+      studio = await Studio.findOne({ ownerId: user._id });
+    }
+
+    return res.json({
+      message: 'Google login successful',
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone },
+      studio: studio ? { id: studio._id, name: studio.name, subdomain: studio.subdomain, logoUrl: studio.logoUrl, customDomain: studio.customDomain } : null,
+      ...tokens,
+    });
+  } catch (err: any) {
+    console.error('Google login error:', err);
     return res.status(500).json({ error: err.message });
   }
 };

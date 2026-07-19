@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Loader, ArrowRight, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader, ArrowRight, Mail, Lock, X } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
+import { apiClient } from '../../lib/api';
 import PublicWrapper from '../../components/PublicWrapper';
+import Script from 'next/script';
 
 export default function LoginPage() {
   const [loginEmail, setLoginEmail] = useState('');
@@ -14,6 +16,8 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [googlePopupActive, setGooglePopupActive] = useState(false);
+  const [loginRole, setLoginRole] = useState<'STUDIO_OWNER' | 'CLIENT'>('STUDIO_OWNER');
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -32,6 +36,68 @@ export default function LoginPage() {
       setRememberMe(true);
     }
   }, []);
+
+  const handleGoogleLogin = async (email: string, name: string, googleId: string) => {
+    setLoading(true);
+    setError('');
+    setGooglePopupActive(false);
+    try {
+      const res = await apiClient.post('/auth/google-login', {
+        email,
+        name,
+        googleId,
+        role: loginRole,
+      });
+      
+      localStorage.setItem('accessToken', res.data.accessToken);
+      localStorage.setItem('refreshToken', res.data.refreshToken);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      if (res.data.studio) {
+        localStorage.setItem('studio', JSON.stringify(res.data.studio));
+      }
+      
+      window.dispatchEvent(new Event('authStateChanged'));
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Google login failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRealGoogleSignIn = () => {
+    try {
+      const client = (window as any).google.accounts.oauth2.initTokenClient({
+        client_id: '486978416692-98vmof7b7n5hrrbn6diaj7marsqrm3ar.apps.googleusercontent.com',
+        scope: 'email profile',
+        callback: async (tokenResponse: any) => {
+          if (tokenResponse && tokenResponse.access_token) {
+            setLoading(true);
+            try {
+              const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+              });
+              const userInfo = await userInfoRes.json();
+              if (userInfo && userInfo.email) {
+                handleGoogleLogin(
+                  userInfo.email,
+                  userInfo.name || userInfo.email.split('@')[0],
+                  userInfo.sub || `google_${Date.now()}`
+                );
+              }
+            } catch (err) {
+              setError('Failed to retrieve user info from Google.');
+            } finally {
+              setLoading(false);
+            }
+          }
+        },
+      });
+      client.requestAccessToken();
+    } catch (e) {
+      setError('Failed to initialize Google Sign-In.');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -412,6 +478,26 @@ export default function LoginPage() {
             <button id="login-submit" type="submit" disabled={loading} className="login-btn">
               {loading ? <Loader className="w-4 h-4 animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
             </button>
+
+            <div className="relative flex py-4 items-center">
+              <div className="flex-grow border-t border-slate-200"></div>
+              <span className="flex-shrink mx-4 text-slate-400 text-xs font-bold font-poppins uppercase tracking-widest">OR</span>
+              <div className="flex-grow border-t border-slate-200"></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setGooglePopupActive(true)}
+              className="w-full flex items-center justify-center gap-3 border border-slate-200 rounded-[12px] bg-white text-slate-700 font-bold h-[56px] hover:bg-slate-50 hover:shadow-md transition-all duration-300 cursor-pointer"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#EA4335" d="M5.266,9.765 C6.199,6.97 8.795,5 12,5 C13.79,5 15.353,5.64 16.587,6.728 L20.21,3.105 C18.012,1.18 15.15,0 12,0 C7.303,0 3.268,2.69 1.258,6.619 L5.266,9.765 Z" />
+                <path fill="#34A853" d="M16.04,18.013 C14.95,18.73 13.565,19 12,19 C8.795,19 6.198,17.03 5.266,14.235 L1.258,17.38 C3.268,21.31 7.303,24 12,24 C15.02,24 17.756,22.925 19.825,21.05 L16.04,18.013 Z" />
+                <path fill="#4285F4" d="M23.49,12.275 C23.49,11.49 23.415,10.73 23.3,10 L12,10 L12,14.515 L18.447,14.515 C18.16,16.085 17.275,17.22 16.04,18.013 L19.825,21.05 C22.037,19.01 23.49,16.005 23.49,12.275 Z" />
+                <path fill="#FBBC05" d="M5.266,14.235 C5.024,13.52 4.885,12.775 4.885,12 C4.885,11.225 5.024,10.48 5.266,9.765 L1.258,6.62 C0.46,8.215 0,10.035 0,12 C0,13.965 0.46,15.785 1.258,17.38 L5.266,14.235 Z" />
+              </svg>
+              Continue with Google
+            </button>
           </form>
 
           <div className="login-footer">
@@ -419,6 +505,51 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {googlePopupActive && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative animate-scaleUp">
+            <button onClick={() => setGooglePopupActive(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-black mb-4">Google Sign-In</h3>
+            <p className="text-sm text-slate-500 mb-4 font-medium">Use the official popup below to continue with Google.</p>
+            
+            <div className="mb-6">
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">If you are new, sign up as:</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700">
+                  <input
+                    type="radio"
+                    name="googleRole"
+                    value="STUDIO_OWNER"
+                    checked={loginRole === 'STUDIO_OWNER'}
+                    onChange={() => setLoginRole('STUDIO_OWNER')}
+                    style={{ accentColor: '#c5a880' }}
+                  />
+                  Studio Owner
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700">
+                  <input
+                    type="radio"
+                    name="googleRole"
+                    value="CLIENT"
+                    checked={loginRole === 'CLIENT'}
+                    onChange={() => setLoginRole('CLIENT')}
+                    style={{ accentColor: '#c5a880' }}
+                  />
+                  Client / User
+                </label>
+              </div>
+            </div>
+
+            <button onClick={handleRealGoogleSignIn} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md">
+              Launch Google Popup
+            </button>
+          </div>
+        </div>
+      )}
+      <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
     </PublicWrapper>
   );
 }
