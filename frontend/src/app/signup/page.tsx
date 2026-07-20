@@ -33,13 +33,13 @@ export default function SignupPage() {
   const [regStudioName, setRegStudioName] = useState('');
   const [regWebsite, setRegWebsite] = useState('');
   const [regLogo, setRegLogo] = useState('');
-  const [regRole, setRegRole] = useState<'STUDIO_OWNER' | 'CLIENT'>('STUDIO_OWNER');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [emailExists, setEmailExists] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
+  const regRole = 'STUDIO_OWNER';
 
   const { register, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -513,34 +513,6 @@ export default function SignupPage() {
           {error && <div className="signup-error">{error}</div>}
 
           <form onSubmit={handleRegister}>
-            <div className="signup-input-group">
-              <label className="signup-label">Register As</label>
-              <div style={{ display: 'flex', gap: '16px', marginTop: '8px', marginBottom: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: '#334155' }}>
-                  <input
-                    type="radio"
-                    name="userRole"
-                    value="STUDIO_OWNER"
-                    checked={regRole === 'STUDIO_OWNER'}
-                    onChange={() => setRegRole('STUDIO_OWNER')}
-                    style={{ accentColor: '#c5a880', width: '16px', height: '16px' }}
-                  />
-                  Studio Owner / Admin
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: '#334155' }}>
-                  <input
-                    type="radio"
-                    name="userRole"
-                    value="CLIENT"
-                    checked={regRole === 'CLIENT'}
-                    onChange={() => setRegRole('CLIENT')}
-                    style={{ accentColor: '#c5a880', width: '16px', height: '16px' }}
-                  />
-                  Client / User
-                </label>
-              </div>
-            </div>
-
             <div className="signup-input-group">
               <label className="signup-label">Full Name <span style={{ color: '#dc2626' }}>*</span></label>
               <div className="signup-input-wrap">

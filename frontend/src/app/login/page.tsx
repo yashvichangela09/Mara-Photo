@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [loginRole, setLoginRole] = useState<'STUDIO_OWNER' | 'CLIENT'>('STUDIO_OWNER');
+  const loginRole = 'STUDIO_OWNER';
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
