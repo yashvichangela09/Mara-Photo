@@ -7,22 +7,10 @@ import { Eye, EyeOff, Loader, ArrowRight, Upload, Mail, Lock, User as UserIcon, 
 import { useAuth } from '../../lib/AuthContext';
 import { apiClient } from '../../lib/api';
 import PublicWrapper from '../../components/PublicWrapper';
-import Script from 'next/script';
+import toast from 'react-hot-toast';
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 
-function getPasswordStrength(password: string): { level: number; label: string; color: string } {
-  if (!password) return { level: 0, label: '', color: '#e2e8f0' };
-  let score = 0;
-  if (password.length >= 6) score++;
-  if (password.length >= 8) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[a-z]/.test(password)) score++;
-  if (/\d/.test(password)) score++;
-  if (/[@$!%*?&#]/.test(password)) score++;
-
-  if (score <= 2) return { level: 1, label: 'Weak', color: '#ef4444' };
-  if (score <= 4) return { level: 2, label: 'Medium', color: '#f59e0b' };
-  return { level: 3, label: 'Strong', color: '#22c55e' };
-}
+// getPasswordStrength removed in favor of checklist
 
 export default function SignupPage() {
   const [regName, setRegName] = useState('');
@@ -39,12 +27,17 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [emailExists, setEmailExists] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
-  const regRole = 'STUDIO_OWNER';
 
-  const { register, isAuthenticated, loading: authLoading } = useAuth();
+  const { register, googleLogin, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const passwordStrength = getPasswordStrength(regPassword);
+  const reqList = [
+    { label: 'Starts with a Capital letter', valid: /^[A-Z]/.test(regPassword) },
+    { label: 'Contains a lowercase letter', valid: /[a-z]/.test(regPassword) },
+    { label: 'Contains a number', valid: /\d/.test(regPassword) },
+    { label: 'Contains a special character', valid: /[@$!%*?&#]/.test(regPassword) },
+    { label: 'Minimum 6 characters', valid: regPassword.length >= 6 }
+  ];
   const passwordsMatch = regConfirmPassword ? regPassword === regConfirmPassword : true;
 
   // Redirect if already logged in
@@ -76,125 +69,75 @@ export default function SignupPage() {
     return () => clearTimeout(timer);
   }, [regEmail]);
 
-  const handleGoogleLogin = async (email: string, name: string, googleId: string) => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await apiClient.post('/auth/google-login', {
-        email,
-        name,
-        googleId,
-        role: regRole,
-      });
-      
-      localStorage.setItem('accessToken', res.data.accessToken);
-      localStorage.setItem('refreshToken', res.data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-      if (res.data.studio) {
-        localStorage.setItem('studio', JSON.stringify(res.data.studio));
-      }
-      
-      window.dispatchEvent(new Event('authStateChanged'));
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err?.response?.data?.error || 'Google login failed.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRealGoogleSignIn = () => {
-    try {
-      const client = (window as any).google.accounts.oauth2.initTokenClient({
-        client_id: '486978416692-98vmof7b7n5hrrbn6diaj7marsqrm3ar.apps.googleusercontent.com',
-        scope: 'email profile',
-        callback: async (tokenResponse: any) => {
-          if (tokenResponse && tokenResponse.access_token) {
-            setLoading(true);
-            try {
-              const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-              });
-              const userInfo = await userInfoRes.json();
-              if (userInfo && userInfo.email) {
-                handleGoogleLogin(
-                  userInfo.email,
-                  userInfo.name || userInfo.email.split('@')[0],
-                  userInfo.sub || `google_${Date.now()}`
-                );
-              }
-            } catch (err) {
-              setError('Failed to retrieve user info from Google.');
-            } finally {
-              setLoading(false);
-            }
-          }
-        },
-      });
-      client.requestAccessToken();
-    } catch (e) {
-      setError('Failed to initialize Google Sign-In.');
-    }
-  };
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
-    const requiredFields = regRole === 'STUDIO_OWNER' 
-      ? (!regName || !regEmail || !regPhone || !regStudioName || !regPassword)
-      : (!regName || !regEmail || !regPhone || !regPassword);
-
-    if (requiredFields) {
-      setError('All required fields must be filled.');
+    if (!regName || !regEmail || !regPhone || !regStudioName || !regPassword) {
+      toast.error('All required fields must be filled.');
       setLoading(false);
       return;
     }
 
     if (regPassword !== regConfirmPassword) {
-      setError('Passwords do not match.');
+      toast.error('Passwords do not match.');
       setLoading(false);
       return;
     }
 
     if (!/^[6-9]\d{9}$/.test(regPhone)) {
-      setError('Mobile number must be 10 digits starting with 6-9.');
+      toast.error('Mobile number must be 10 digits starting with 6-9.');
       setLoading(false);
       return;
     }
 
     const passwordRegex = /^[A-Z](?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&#]).{5,}$/;
     if (!passwordRegex.test(regPassword)) {
-      setError('Password must start with a Capital letter, contain at least 1 number, 1 special character, and small letters.');
+      toast.error('Password must start with a Capital letter, contain at least 1 number, 1 special character, and small letters.');
       setLoading(false);
       return;
     }
 
     if (emailExists) {
-      setError('This email is already registered. Please login instead.');
+      toast.error('This email is already registered. Please login instead.');
       setLoading(false);
       return;
     }
 
     try {
-      const subdomain = regRole === 'STUDIO_OWNER' ? regStudioName.toLowerCase().replace(/[^a-z0-9]/g, '-') : '';
+      const subdomain = regStudioName.toLowerCase().replace(/[^a-z0-9]/g, '-');
       await register({
         name: regName,
         email: regEmail,
         password: regPassword,
         phone: regPhone,
-        role: regRole,
-        ...(regRole === 'STUDIO_OWNER' ? {
-          studioName: regStudioName,
-          subdomain,
-          websiteLink: regWebsite,
-          logoUrl: regLogo,
-        } : {})
+        studioName: regStudioName,
+        subdomain,
+        websiteLink: regWebsite,
+        logoUrl: regLogo,
       });
+      toast.success('Registration successful!');
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Registration failed.');
+      toast.error(err?.response?.data?.error || 'Registration failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    if (!credentialResponse.credential) return;
+    try {
+      setLoading(true);
+      if (googleLogin) {
+        await googleLogin(credentialResponse.credential);
+        toast.success('Google sign-up successful!');
+        router.push('/dashboard');
+      } else {
+         toast.error("Google login method not implemented in AuthContext.");
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || 'Google sign-up failed.');
     } finally {
       setLoading(false);
     }
@@ -433,17 +376,78 @@ export default function SignupPage() {
           transition: color 0.2s;
         }
         .signup-footer a:hover { color: #09090b; }
-        .signup-error {
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          color: #dc2626;
-          font-size: 12px;
+        .google-auth-wrapper {
+          position: relative;
+          margin-bottom: 24px;
+          width: 100%;
+        }
+        .google-auth-wrapper > div:first-child {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0.01;
+          z-index: 2;
+          cursor: pointer;
+        }
+        .google-auth-wrapper > div:first-child div,
+        .google-auth-wrapper > div:first-child iframe {
+          width: 100% !important;
+          height: 100% !important;
+          min-width: 100% !important;
+        }
+        .google-custom-btn {
+          width: 100%;
+          padding: 16px;
+          font-size: 13px;
           font-weight: 700;
-          padding: 12px 16px;
-          border-radius: 10px;
-          margin-bottom: 16px;
+          color: #09090b;
+          background: #fff;
+          border: 1.5px solid #e3d8c8;
+          border-radius: 12px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          z-index: 1;
+          pointer-events: none;
+        }
+        .google-auth-wrapper:hover .google-custom-btn {
+          border-color: #c5a880;
+          box-shadow: 0 4px 16px rgba(197,168,128,0.15);
+          transform: translateY(-1px);
+        }
+        .google-custom-btn svg {
+          width: 18px;
+          height: 18px;
+          flex-shrink: 0;
+        }
+        .auth-divider {
+          display: flex;
+          align-items: center;
           text-align: center;
-          animation: slideUp 0.3s ease;
+          margin-bottom: 24px;
+          color: #94a3b8;
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+          content: '';
+          flex: 1;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        .auth-divider:not(:empty)::before {
+          margin-right: .5em;
+        }
+        .auth-divider:not(:empty)::after {
+          margin-left: .5em;
         }
         .logo-upload-area {
           display: flex;
@@ -510,8 +514,6 @@ export default function SignupPage() {
           <h1 className="signup-title">Create Your Studio</h1>
           <p className="signup-subtitle">Start delivering photos with AI in minutes</p>
 
-          {error && <div className="signup-error">{error}</div>}
-
           <form onSubmit={handleRegister}>
             <div className="signup-input-group">
               <label className="signup-label">Full Name <span style={{ color: '#dc2626' }}>*</span></label>
@@ -557,46 +559,42 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {regRole === 'STUDIO_OWNER' && (
-              <>
-                <div className="signup-input-group">
-                  <label className="signup-label">Studio Name <span style={{ color: '#dc2626' }}>*</span></label>
-                  <div className="signup-input-wrap">
-                    <input id="signup-studio" type="text" required value={regStudioName} onChange={(e) => setRegStudioName(e.target.value)}  className="signup-input" />
-                    <Store className="signup-input-icon" style={{ width: 16, height: 16 }} />
+            <div className="signup-input-group">
+              <label className="signup-label">Studio Name <span style={{ color: '#dc2626' }}>*</span></label>
+              <div className="signup-input-wrap">
+                <input id="signup-studio" type="text" required value={regStudioName} onChange={(e) => setRegStudioName(e.target.value)}  className="signup-input" />
+                <Store className="signup-input-icon" style={{ width: 16, height: 16 }} />
+              </div>
+            </div>
+
+            {/* Optional Fields */}
+            <div className="section-divider">
+              <p className="section-label">Optional</p>
+            </div>
+
+            <div className="signup-input-group">
+              <label className="signup-label">Studio Website Link</label>
+              <div className="signup-input-wrap">
+                <input type="url" value={regWebsite} onChange={(e) => setRegWebsite(e.target.value)}  className="signup-input" style={{ paddingLeft: '16px' }} />
+              </div>
+            </div>
+
+            <div className="signup-input-group">
+              <label className="signup-label">Studio Logo</label>
+              <label className="logo-upload-area">
+                {regLogo ? (
+                  <img src={regLogo} alt="Logo" className="logo-preview" />
+                ) : (
+                  <div className="logo-placeholder">
+                    <Upload className="w-4 h-4" />
                   </div>
-                </div>
-
-                {/* Optional Fields */}
-                <div className="section-divider">
-                  <p className="section-label">Optional</p>
-                </div>
-
-                <div className="signup-input-group">
-                  <label className="signup-label">Studio Website Link</label>
-                  <div className="signup-input-wrap">
-                    <input type="url" value={regWebsite} onChange={(e) => setRegWebsite(e.target.value)}  className="signup-input" style={{ paddingLeft: '16px' }} />
-                  </div>
-                </div>
-
-                <div className="signup-input-group">
-                  <label className="signup-label">Studio Logo</label>
-                  <label className="logo-upload-area">
-                    {regLogo ? (
-                      <img src={regLogo} alt="Logo" className="logo-preview" />
-                    ) : (
-                      <div className="logo-placeholder">
-                        <Upload className="w-4 h-4" />
-                      </div>
-                    )}
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
-                      {regLogo ? 'Change logo' : 'Upload your studio logo'}
-                    </span>
-                    <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
-                  </label>
-                </div>
-              </>
-            )}
+                )}
+                <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>
+                  {regLogo ? 'Change logo' : 'Upload your studio logo'}
+                </span>
+                <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
+              </label>
+            </div>
 
             {/* Password Section */}
             <div className="section-divider"></div>
@@ -621,16 +619,18 @@ export default function SignupPage() {
                 </button>
               </div>
               {regPassword && (
-                <>
-                  <div className="strength-bar">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="strength-segment" style={{ background: i <= passwordStrength.level ? passwordStrength.color : '#e2e8f0' }} />
-                    ))}
-                  </div>
-                  <div className="strength-label" style={{ color: passwordStrength.color }}>
-                    {passwordStrength.label}
-                  </div>
-                </>
+                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {reqList.map((req, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: req.valid ? '#22c55e' : '#94a3b8', fontWeight: 600, transition: 'color 0.2s' }}>
+                      {req.valid ? (
+                        <Check style={{ width: 14, height: 14 }} />
+                      ) : (
+                        <div style={{ width: 12, height: 12, border: '1.5px solid currentColor', borderRadius: '3px', marginLeft: '1px', marginRight: '1px' }} />
+                      )}
+                      <span>{req.label}</span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -667,34 +667,38 @@ export default function SignupPage() {
             <button id="signup-submit" type="submit" disabled={loading || emailExists} className="signup-btn">
               {loading ? <Loader className="w-4 h-4 animate-spin" /> : <>Create Account <ArrowRight className="w-4 h-4" /></>}
             </button>
-
-            <div className="relative flex py-4 items-center">
-              <div className="flex-grow border-t border-slate-200"></div>
-              <span className="flex-shrink mx-4 text-slate-400 text-xs font-bold font-poppins uppercase tracking-widest">OR</span>
-              <div className="flex-grow border-t border-slate-200"></div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleRealGoogleSignIn}
-              className="w-full flex items-center justify-center gap-3 border border-slate-200 rounded-[12px] bg-white text-slate-700 font-bold h-[56px] hover:bg-slate-50 hover:shadow-md transition-all duration-300 cursor-pointer"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#EA4335" d="M5.266,9.765 C6.199,6.97 8.795,5 12,5 C13.79,5 15.353,5.64 16.587,6.728 L20.21,3.105 C18.012,1.18 15.15,0 12,0 C7.303,0 3.268,2.69 1.258,6.619 L5.266,9.765 Z" />
-                <path fill="#34A853" d="M16.04,18.013 C14.95,18.73 13.565,19 12,19 C8.795,19 6.198,17.03 5.266,14.235 L1.258,17.38 C3.268,21.31 7.303,24 12,24 C15.02,24 17.756,22.925 19.825,21.05 L16.04,18.013 Z" />
-                <path fill="#4285F4" d="M23.49,12.275 C23.49,11.49 23.415,10.73 23.3,10 L12,10 L12,14.515 L18.447,14.515 C18.16,16.085 17.275,17.22 16.04,18.013 L19.825,21.05 C22.037,19.01 23.49,16.005 23.49,12.275 Z" />
-                <path fill="#FBBC05" d="M5.266,14.235 C5.024,13.52 4.885,12.775 4.885,12 C4.885,11.225 5.024,10.48 5.266,9.765 L1.258,6.62 C0.46,8.215 0,10.035 0,12 C0,13.965 0.46,15.785 1.258,17.38 L5.266,14.235 Z" />
-              </svg>
-              Continue with Google
-            </button>
           </form>
+
+          <div className="auth-divider" style={{ marginTop: '24px' }}>or continue with Google</div>
+
+          <div className="google-auth-wrapper">
+             <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'dummy-client-id'}>
+               <GoogleLogin
+                 onSuccess={handleGoogleSuccess}
+                 onError={() => toast.error('Google Sign-Up failed')}
+                 theme="outline"
+                 size="large"
+                 text="continue_with"
+                 shape="rectangular"
+                 width={400}
+               />
+             </GoogleOAuthProvider>
+             <div className="google-custom-btn">
+               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+               </svg>
+               Continue with Google
+             </div>
+          </div>
 
           <div className="signup-footer">
             Already have an account? <Link href="/login">Sign In</Link>
           </div>
         </div>
       </div>
-      <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
     </PublicWrapper>
   );
 }

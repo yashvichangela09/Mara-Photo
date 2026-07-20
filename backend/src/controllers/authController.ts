@@ -2,8 +2,11 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User, Studio } from '../models';
-import { sendOTPEmail, sendWelcomeEmail } from '../services/EmailService';
+import { sendOTPEmail, sendWelcomeEmail, sendAdminNotificationEmail } from '../services/EmailService';
 import { AuthRequest } from '../middlewares/auth';
+import { OAuth2Client } from 'google-auth-library';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_super_secret_jwt_access_token_key_1234';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'default_super_secret_jwt_refresh_token_key_5678';
@@ -18,18 +21,11 @@ const generateTokens = (userId: string, role: string) => {
  * Register a new Studio Owner and auto-initialize their Studio profile
  */
 export const registerStudioOwner = async (req: Request, res: Response) => {
-  const { name, email, password, phone, studioName, subdomain, websiteLink, logoUrl, role } = req.body;
-  const isClient = role === 'CLIENT';
+  const { name, email, password, phone, studioName, subdomain, websiteLink, logoUrl } = req.body;
 
   try {
-    if (isClient) {
-      if (!name || !email || !password || !phone) {
-        return res.status(400).json({ error: 'All fields are required' });
-      }
-    } else {
-      if (!name || !email || !password || !phone || !studioName || !subdomain) {
-        return res.status(400).json({ error: 'All fields are required' });
-      }
+    if (!name || !email || !password || !phone || !studioName || !subdomain) {
+      return res.status(400).json({ error: 'All fields are required' });
     }
 
     if (!/^[6-9]\d{9}$/.test(phone)) {
@@ -46,13 +42,10 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
-    let cleanSubdomain = '';
-    if (!isClient) {
-      cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
-      const existingStudio = await Studio.findOne({ subdomain: cleanSubdomain });
-      if (existingStudio) {
-        return res.status(400).json({ error: 'Subdomain already taken' });
-      }
+    const cleanSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    const existingStudio = await Studio.findOne({ subdomain: cleanSubdomain });
+    if (existingStudio) {
+      return res.status(400).json({ error: 'Subdomain already taken' });
     }
 
     // Hash password
@@ -65,34 +58,37 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
       email: email.toLowerCase(),
       phone,
       passwordHash,
-      role: isClient ? 'CLIENT' : 'STUDIO_OWNER',
+      role: 'STUDIO_OWNER',
     });
 
-    let newStudio = null;
-    if (!isClient) {
-      // Create studio
-      newStudio = await Studio.create({
-        name: studioName,
-        subdomain: cleanSubdomain,
-        ownerId: newUser._id,
-        subscriptionPlan: 'BASIC',
-        subscriptionStatus: 'FREE',
-        customDomain: websiteLink || undefined,
-        logoUrl: logoUrl || undefined,
-      });
-    }
+    // Create studio
+    const newStudio = await Studio.create({
+      name: studioName,
+      subdomain: cleanSubdomain,
+      ownerId: newUser._id,
+      subscriptionPlan: 'BASIC',
+      subscriptionStatus: 'FREE',
+      customDomain: websiteLink || undefined,
+      logoUrl: logoUrl || undefined,
+    });
 
     const tokens = generateTokens(newUser._id.toString(), newUser.role);
     newUser.refreshToken = tokens.refreshToken;
     await newUser.save();
 
-    // Send Welcome Email asynchronously
-    sendWelcomeEmail(newUser.email, newUser.name, !isClient).catch(err => console.error("Welcome Email Failed:", err));
+    // Send Welcome Email asynchronously (don't block the response)
+    sendWelcomeEmail(newUser.email, newUser.name, true).catch(err => console.error("Welcome Email Failed:", err));
+    
+    // Notify Admin
+    sendAdminNotificationEmail(
+      `New Studio Registration: ${newUser.name}`, 
+      `<p>A new studio has registered on Mara Photo.</p><p>Name: ${newUser.name}</p><p>Email: ${newUser.email}</p><p>Phone: ${newUser.phone}</p><p>Studio Name: ${newStudio.name}</p>`
+    ).catch(err => console.error("Admin Notification Failed:", err));
 
     return res.status(201).json({
-      message: isClient ? 'User registered successfully' : 'Studio registered successfully',
+      message: 'Studio registered successfully',
       user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role, phone: newUser.phone },
-      studio: newStudio ? { id: newStudio._id, name: newStudio.name, subdomain: newStudio.subdomain, logoUrl: newStudio.logoUrl, customDomain: newStudio.customDomain } : null,
+      studio: { id: newStudio._id, name: newStudio.name, subdomain: newStudio.subdomain, logoUrl: newStudio.logoUrl, customDomain: newStudio.customDomain },
       ...tokens,
     });
   } catch (err: any) {
@@ -139,6 +135,77 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Google Login/Signup
+ */
+export const googleLogin = async (req: Request, res: Response) => {
+  const { credential } = req.body;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ error: 'Invalid Google token' });
+    }
+
+    const email = payload.email.toLowerCase();
+    const name = payload.name || 'User';
+
+    let user = await User.findOne({ email });
+
+    // If user doesn't exist, create them as STUDIO_OWNER (or just user)
+    // For our app, we usually need studio details for registration, but for Google Login we can
+    // just create the user, and if they don't have a studio, they can be prompted to create one later.
+    // Or we create a placeholder studio. We'll create a placeholder studio.
+    let isNewUser = false;
+    if (!user) {
+      isNewUser = true;
+      user = await User.create({
+        name,
+        email,
+        role: 'STUDIO_OWNER',
+        // Password is not needed for google auth, but we might want a placeholder or optional password
+      });
+    }
+
+    const tokens = generateTokens(user._id.toString(), user.role);
+    user.refreshToken = tokens.refreshToken;
+    await user.save();
+
+    let studio = null;
+    if (user.role === 'STUDIO_OWNER') {
+      studio = await Studio.findOne({ ownerId: user._id });
+      
+      // If new user, create a placeholder studio
+      if (!studio) {
+        const cleanSubdomain = name.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + Math.floor(Math.random() * 10000);
+        studio = await Studio.create({
+          name: name + "'s Studio",
+          subdomain: cleanSubdomain,
+          ownerId: user._id,
+          subscriptionPlan: 'BASIC',
+          subscriptionStatus: 'FREE',
+        });
+      }
+    }
+
+    if (isNewUser) {
+      sendWelcomeEmail(user.email, user.name, true).catch(err => console.error("Welcome Email Failed:", err));
+    }
+
+    return res.json({
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      studio: studio ? { id: studio._id, name: studio.name, subdomain: studio.subdomain } : null,
+      ...tokens,
+    });
+  } catch (err: any) {
+    console.error('Google Login Error:', err);
+    return res.status(500).json({ error: 'Failed to authenticate with Google' });
   }
 };
 
@@ -399,67 +466,6 @@ export const checkEmail = async (req: Request, res: Response) => {
     const existing = await User.findOne({ email: (email as string).toLowerCase() });
     return res.json({ exists: !!existing });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
-  }
-};
-
-/**
- * Google Sign-In / Sign-Up handler (automatically registers new users)
- */
-export const googleLogin = async (req: Request, res: Response) => {
-  const { email, name, googleId, role } = req.body;
-  const targetRole = role === 'CLIENT' ? 'CLIENT' : 'STUDIO_OWNER';
-
-  try {
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
-    }
-
-    let user = await User.findOne({ email: email.toLowerCase() });
-    
-    if (!user) {
-      // If user does not exist, register them
-      const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash(Math.random().toString(36), salt);
-
-      user = await User.create({
-        name: name || email.split('@')[0],
-        email: email.toLowerCase(),
-        phone: '9999999999', // fallback phone
-        passwordHash,
-        role: targetRole,
-      });
-
-      if (targetRole === 'STUDIO_OWNER') {
-        const subdomain = (name || email.split('@')[0]).toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.floor(100 + Math.random() * 900);
-        await Studio.create({
-          name: (name || email.split('@')[0]) + ' Studio',
-          subdomain,
-          ownerId: user._id,
-          subscriptionPlan: 'BASIC',
-          subscriptionStatus: 'FREE',
-        });
-      }
-    }
-
-    // Generate tokens
-    const tokens = generateTokens(user._id.toString(), user.role);
-    user.refreshToken = tokens.refreshToken;
-    await user.save();
-
-    let studio = null;
-    if (user.role === 'STUDIO_OWNER') {
-      studio = await Studio.findOne({ ownerId: user._id });
-    }
-
-    return res.json({
-      message: 'Google login successful',
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone },
-      studio: studio ? { id: studio._id, name: studio.name, subdomain: studio.subdomain, logoUrl: studio.logoUrl, customDomain: studio.customDomain } : null,
-      ...tokens,
-    });
-  } catch (err: any) {
-    console.error('Google login error:', err);
     return res.status(500).json({ error: err.message });
   }
 };
