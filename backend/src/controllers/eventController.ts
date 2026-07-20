@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { AuthRequest } from '../middlewares/auth';
 import { Event, Studio, User, Media } from '../models';
 import Customer from '../models/Customer';
+import { sendAdminNotificationEmail, sendEventInviteEmail } from '../services/EmailService';
 
 /**
  * Creates a new event
@@ -19,6 +20,10 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
     coverImageUrl,
     description,
     location,
+    time,
+    isMultiDay,
+    totalDays,
+    days,
     accessType,
     password,
     assignedTeamEmails,
@@ -76,6 +81,10 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
       coverImageUrl,
       description,
       location,
+      time,
+      isMultiDay,
+      totalDays,
+      days,
       accessType,
       passwordHash,
       studioId: studio._id,
@@ -106,6 +115,27 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
       }
     } catch (custErr) {
       console.error('Error syncing customer:', custErr);
+    }
+
+    // Notify Admin
+    sendAdminNotificationEmail(
+      `New Event Created: ${newEvent.name}`, 
+      `<p>A new event has been created on Mara Photo.</p><p>Event Name: ${newEvent.name}</p><p>Client: ${newEvent.clientName}</p><p>Studio ID: ${studio._id}</p>`
+    ).catch(err => console.error("Admin Notification Failed:", err));
+
+    // Send email to the studio owner (logged in user) about the event creation
+    if (req.user && req.user.email) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const galleryLink = `${frontendUrl}/e/${newEvent.code}`;
+      
+      sendEventInviteEmail(
+        req.user.email,
+        req.user.name || 'Studio Owner',
+        name,
+        galleryLink,
+        accessType,
+        password // Send raw password so studio owner knows it
+      ).catch(err => console.error("Studio Owner Event Email Failed:", err));
     }
 
     return res.status(201).json({ message: 'Event created successfully', event: newEvent });
@@ -235,6 +265,10 @@ export const updateEvent = async (req: AuthRequest, res: Response) => {
     coverImageUrl,
     description,
     location,
+    time,
+    isMultiDay,
+    totalDays,
+    days,
     accessType,
     password,
     watermark,
@@ -276,6 +310,10 @@ export const updateEvent = async (req: AuthRequest, res: Response) => {
     if (coverImageUrl !== undefined) event.coverImageUrl = coverImageUrl;
     if (description !== undefined) event.description = description;
     if (location !== undefined) event.location = location;
+    if (time !== undefined) event.time = time;
+    if (isMultiDay !== undefined) event.isMultiDay = isMultiDay;
+    if (totalDays !== undefined) event.totalDays = totalDays;
+    if (days !== undefined) event.days = days;
     if (addToPortfolio !== undefined) event.addToPortfolio = addToPortfolio;
 
     if (accessType) {
