@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import { 
+  ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, 
+  Settings, Camera, Trash2, Loader2, Check, Copy, ZoomIn, Play, ShieldCheck, RefreshCw, ScanFace, 
+  ChevronRight, ChevronLeft, LayoutGrid, Sliders, X, Download, Loader, Sparkles, CalendarDays, 
+  Lock, Key, AlertCircle, Search 
+} from 'lucide-react';
+import PhotoAlbum from 'react-photo-album';
 import confetti from 'canvas-confetti';
-import { ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, Settings, Camera, Trash2, Loader2, Check, Copy, ZoomIn, Play, ShieldCheck, RefreshCw, ScanFace, ChevronRight, ChevronLeft, LayoutGrid, Sliders, X, Download, Loader, Sparkles, CalendarDays, Lock, Key, AlertCircle, Search } from 'lucide-react';
-import { apiClient } from '@/lib/api';
-import { MasonryPhotoAlbum, RowsPhotoAlbum } from "react-photo-album";
-import "react-photo-album/masonry.css";
-import "react-photo-album/rows.css";
+import { apiClient } from '../../../lib/api';
 
 const dbName = 'MeraPhotoDB';
 const storeName = 'media_files';
@@ -71,7 +74,7 @@ export default function ClientGallery() {
   // Gallery view configurations
   const [viewType, setViewType] = useState<'grid' | 'masonry' | 'timeline'>('masonry');
   const [mediaFilter, setMediaFilter] = useState<'ALL' | 'PHOTO' | 'VIDEO'>('ALL');
-  
+
   // Selfie Search Modal
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchTab, setSearchTab] = useState<'upload' | 'camera'>('upload');
@@ -173,20 +176,24 @@ export default function ClientGallery() {
         return;
       }
       
-      const galleryMedia = searchActive ? matchedMedia : media;
-      const currentIndex = galleryMedia.findIndex(m => m._id === selectedItem._id);
+      const galleryMediaList = (searchActive ? matchedMedia : media).filter(m => {
+        if (mediaFilter === 'PHOTO') return m.type === 'PHOTO' || !m.type;
+        if (mediaFilter === 'VIDEO') return m.type === 'VIDEO';
+        return true;
+      });
+      const currentIndex = galleryMediaList.findIndex(m => m._id === selectedItem._id);
       if (currentIndex === -1) return;
 
-      if (e.key === 'ArrowRight' && currentIndex < galleryMedia.length - 1) {
-        setSelectedItem(galleryMedia[currentIndex + 1]);
+      if (e.key === 'ArrowRight' && currentIndex < galleryMediaList.length - 1) {
+        setSelectedItem(galleryMediaList[currentIndex + 1]);
       } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
-        setSelectedItem(galleryMedia[currentIndex - 1]);
+        setSelectedItem(galleryMediaList[currentIndex - 1]);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedItem, searchActive, matchedMedia, media]);
+  }, [selectedItem, searchActive, matchedMedia, media, mediaFilter]);
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -269,7 +276,7 @@ export default function ClientGallery() {
           setSelfieFile(file);
           setSelfiePreview(URL.createObjectURL(file));
           stopWebcam();
-          setSearchTab('upload'); // Switch to upload tab to show preview
+          setSearchTab('upload');
         }
       }, 'image/jpeg', 0.92);
     }
@@ -314,7 +321,6 @@ export default function ClientGallery() {
     const formData = new FormData();
     formData.append('selfie', selfieFile);
 
-    // Simulate progress stages
     const progressTimer = setInterval(() => {
       setSearchProgress(prev => {
         if (prev < 30) {
@@ -348,7 +354,6 @@ export default function ClientGallery() {
       });
       setSearchActive(true);
 
-      // Close modal after a brief success moment
       setTimeout(() => {
         setSearchModalOpen(false);
         clearSelfie();
@@ -359,20 +364,17 @@ export default function ClientGallery() {
       if (matches.length > 0) {
         setTimeout(() => {
           confetti({
-            particleCount: 200,
-            spread: 100,
-            origin: { y: 0.5 },
-            colors: ['#2563EB', '#22D3EE', '#8B5CF6', '#EC4899', '#F59E0B'],
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 }
           });
-        }, 300);
+        }, 800);
       }
     } catch (err: any) {
       clearInterval(progressTimer);
+      console.error(err);
+      setSearchError(err.response?.data?.error || 'Failed to search photos. Please try again.');
       setSearchProgress(0);
-      setSearchStage('');
-      
-      const errorMsg = err.response?.data?.error || 'AI Face Search failed. Please try again.';
-      setSearchError(errorMsg);
     } finally {
       setSearchLoading(false);
     }
@@ -433,38 +435,23 @@ export default function ClientGallery() {
     }
   };
 
-  const handleJumpToTimestamp = (sec: number) => {
-    if (playerRef.current) {
-      playerRef.current.currentTime = sec;
-      playerRef.current.play();
-    }
-  };
-
   const closeSearchModal = () => {
     stopWebcam();
     setSearchModalOpen(false);
     setSearchError('');
     setSearchProgress(0);
     setSearchStage('');
+    clearSelfie();
+    setSearchTab('upload');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <Loader className="h-8 w-8 animate-spin text-[#FF6B00]" />
-      </div>
-    );
-  }
-
-  // 1. Password Lock Page
+  // 1. Locked Screen
   if (isLocked) {
     return (
       <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-between p-6 relative overflow-hidden font-poppins">
-        {/* Subtle background glow */}
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
 
-        {/* Top Header */}
         <div className="w-full max-w-5xl flex items-center justify-between py-4 z-10">
           <div className="flex items-center gap-3">
             {event?.studioId?.logoUrl ? (
@@ -483,17 +470,14 @@ export default function ClientGallery() {
           </span>
         </div>
 
-        {/* Password Card */}
         <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8] p-8 sm:p-10 rounded-3xl text-center shadow-xl relative z-10 my-auto">
           <div className="w-14 h-14 rounded-2xl bg-[#c5a880]/15 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-6 text-[#c5a880]">
             <Lock className="h-6 w-6 text-[#c5a880]" />
           </div>
-          
-          <span className="text-[10px] font-extrabold tracking-widest text-[#c5a880] uppercase bg-[#f5f2eb] px-3 py-1 rounded-full border border-[#e3d8c8] inline-block mb-3">
-            {event?.type || 'GALLERY'}
-          </span>
           <h2 className="text-2xl font-extrabold text-[#09090b] tracking-tight">{event?.name || 'Private Event'}</h2>
-          <p className="text-xs text-slate-500 font-semibold mt-2 leading-relaxed">This gallery is password protected. Enter the password below to access the memories.</p>
+          <p className="text-xs text-slate-500 font-semibold mt-2 leading-relaxed">
+            This gallery is password protected.<br />Enter the password to view the photos.
+          </p>
 
           {authError && (
             <div className="mt-4 bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs flex items-center justify-center gap-2 font-bold">
@@ -505,17 +489,17 @@ export default function ClientGallery() {
           <form onSubmit={handleUnlock} className="flex flex-col gap-4 mt-6">
             <div className="relative">
               <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c5a880]" />
-              <input 
-                type="password" 
-                required 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                placeholder="Enter event password" 
-                className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl pl-11 pr-4 py-3.5 text-sm font-semibold text-[#09090b] placeholder:text-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white text-center tracking-wider transition-all" 
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter event password"
+                className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl pl-11 pr-4 py-3.5 text-sm font-semibold text-[#09090b] placeholder:text-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white text-center tracking-wider transition-all"
               />
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-lg"
             >
               Unlock Gallery
@@ -523,7 +507,6 @@ export default function ClientGallery() {
           </form>
         </div>
 
-        {/* Footer Note */}
         <div className="py-4 text-center z-10">
           <p className="text-[11px] text-slate-400 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
         </div>
@@ -535,11 +518,9 @@ export default function ClientGallery() {
   if (!isGuest && !isLocked) {
     return (
       <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-between p-6 relative overflow-hidden font-poppins">
-        {/* Subtle background glow */}
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
 
-        {/* Top Header */}
         <div className="w-full max-w-5xl flex items-center justify-between py-4 z-10">
           <div className="flex items-center gap-3">
             {event?.studioId?.logoUrl ? (
@@ -558,7 +539,6 @@ export default function ClientGallery() {
           </span>
         </div>
 
-        {/* Guest Form Card */}
         <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8] p-8 sm:p-10 rounded-3xl text-center shadow-xl relative z-10 my-auto">
           <div className="w-14 h-14 rounded-2xl bg-[#c5a880]/15 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-6 text-[#c5a880]">
             <User className="h-6 w-6 text-[#c5a880]" />
@@ -632,7 +612,6 @@ export default function ClientGallery() {
           </form>
         </div>
 
-        {/* Footer Note */}
         <div className="py-4 text-center z-10">
           <p className="text-[11px] text-slate-400 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
         </div>
@@ -679,7 +658,7 @@ export default function ClientGallery() {
         </div>
       </header>
 
-      {/* Clear Cover Hero Presentation with Find My Photos Button embedded inside */}
+      {/* Clear Cover Hero Presentation */}
       <div className="relative w-full bg-[#09090b] text-white py-14 sm:py-20 px-6 overflow-hidden">
         {event?.coverImageUrl ? (
           <img src={event.coverImageUrl} alt="Cover" className="absolute inset-0 w-full h-full object-cover opacity-65 scale-100 transition-all duration-700" />
@@ -717,16 +696,6 @@ export default function ClientGallery() {
               </div>
             </div>
           </div>
-
-          {/* Embedded Find My Photos Button in Hero */}
-          <button 
-            onClick={() => setSearchModalOpen(true)}
-            className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black px-6 py-4 rounded-2xl shadow-2xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2.5 border border-white/20 shrink-0 cursor-pointer"
-          >
-            <ScanFace className="h-5 w-5 text-[#09090b]" />
-            <span className="text-sm uppercase tracking-wider">Find My Photos</span>
-            <ChevronRight className="h-4 w-4 opacity-70" />
-          </button>
         </div>
       </div>
 
@@ -815,9 +784,9 @@ export default function ClientGallery() {
                 </div>
               </div>
             )}
-
             {viewType === 'masonry' ? (
-               <MasonryPhotoAlbum 
+               <PhotoAlbum 
+                 layout="masonry"
                  photos={galleryMedia.map(m => ({
                     src: resolveMediaUrl(m),
                     width: m.width || (m.type === 'VIDEO' ? 1920 : 1600),
@@ -846,13 +815,29 @@ export default function ClientGallery() {
                        </div>
                      );
                    },
-                   image: ({ style, className, ...rest }) => (
-                     <img 
-                       {...rest} 
-                       style={{ ...style, transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} 
-                       className={`${className} group-hover:scale-110 object-cover`} 
-                     />
-                   ),
+                   image: (imageProps, { photo }) => {
+                     const m = (photo as any).media;
+                     if (m?.type === 'VIDEO') {
+                       return (
+                         <div style={{ ...imageProps.style, position: 'relative', width: '100%', height: '100%', minHeight: '140px', backgroundColor: '#09090b' }}>
+                           <video 
+                             src={resolveMediaUrl(m)} 
+                             className="w-full h-full object-cover pointer-events-none opacity-90" 
+                             muted 
+                             playsInline 
+                             preload="metadata"
+                           />
+                         </div>
+                       );
+                     }
+                     return (
+                       <img 
+                         {...imageProps} 
+                         style={{ ...imageProps.style, transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} 
+                         className={`${imageProps.className || ''} group-hover:scale-110 object-cover`} 
+                       />
+                     );
+                   },
                    extras: (_, { photo }) => {
                      const m = (photo as any).media;
                      const isSelected = selectedMediaIds.includes(m._id);
@@ -861,7 +846,7 @@ export default function ClientGallery() {
                          {/* Video overlay */}
                          {m.type === 'VIDEO' && (
                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors pointer-events-none z-10">
-                             <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center">
+                             <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg">
                                <Play className="h-5 w-5 text-white fill-white ml-0.5" />
                              </div>
                            </div>
@@ -900,7 +885,8 @@ export default function ClientGallery() {
                  }}
                />
             ) : (
-               <RowsPhotoAlbum 
+               <PhotoAlbum 
+                 layout="rows"
                  photos={galleryMedia.map(m => ({
                     src: resolveMediaUrl(m),
                     width: m.width || (m.type === 'VIDEO' ? 1920 : 1600),
@@ -924,13 +910,29 @@ export default function ClientGallery() {
                        </div>
                      );
                    },
-                   image: ({ style, className, ...rest }) => (
-                     <img 
-                       {...rest} 
-                       style={{ ...style, transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} 
-                       className={`${className} group-hover:scale-110 object-cover`} 
-                     />
-                   ),
+                   image: (imageProps, { photo }) => {
+                     const m = (photo as any).media;
+                     if (m?.type === 'VIDEO') {
+                       return (
+                         <div style={{ ...imageProps.style, position: 'relative', width: '100%', height: '100%', minHeight: '140px', backgroundColor: '#09090b' }}>
+                           <video 
+                             src={resolveMediaUrl(m)} 
+                             className="w-full h-full object-cover pointer-events-none opacity-90" 
+                             muted 
+                             playsInline 
+                             preload="metadata"
+                           />
+                         </div>
+                       );
+                     }
+                     return (
+                       <img 
+                         {...imageProps} 
+                         style={{ ...imageProps.style, transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} 
+                         className={`${imageProps.className || ''} group-hover:scale-110 object-cover`} 
+                       />
+                     );
+                   },
                    extras: (_, { photo }) => {
                      const m = (photo as any).media;
                      const isSelected = selectedMediaIds.includes(m._id);
@@ -939,7 +941,7 @@ export default function ClientGallery() {
                          {/* Video overlay */}
                          {m.type === 'VIDEO' && (
                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors pointer-events-none z-10">
-                             <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center">
+                             <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg">
                                <Play className="h-5 w-5 text-white fill-white ml-0.5" />
                              </div>
                            </div>
@@ -1000,22 +1002,6 @@ export default function ClientGallery() {
         )}
       </div>
 
-      {/* ── Floating Action Button ── */}
-      <button 
-        onClick={() => setSearchModalOpen(true)} 
-        className="fixed bottom-8 right-8 z-35 group"
-      >
-        <div className="relative">
-          {/* Pulse ring */}
-          <div className="absolute inset-0 bg-[#c5a880] rounded-2xl animate-ping opacity-25" />
-          <div className="relative bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black px-6 py-4 rounded-2xl shadow-2xl transform hover:-translate-y-0.5 transition-all flex items-center gap-2.5 border border-[#e3d8c8]">
-            <ScanFace className="h-5 w-5 text-[#09090b]" />
-            <span className="text-sm uppercase tracking-wider">Find My Photos</span>
-            <ChevronRight className="h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition-transform" />
-          </div>
-        </div>
-      </button>
-
       {/* Rich Contact Footer */}
       <footer className="mt-20 bg-[#09090b] text-white border-t border-white/10 py-14 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
@@ -1072,8 +1058,6 @@ export default function ClientGallery() {
       {searchModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#0F172A]/90 backdrop-blur-lg flex items-center justify-center p-6">
           <div className="w-full max-w-lg bg-white p-0 rounded-3xl relative shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            
-            {/* Modal Header */}
             <div className="relative bg-[#09090b] text-white p-6 pb-8 border-b border-white/10">
               <button 
                 onClick={closeSearchModal} 
@@ -1094,7 +1078,6 @@ export default function ClientGallery() {
             </div>
 
             <div className="p-6 -mt-3">
-              {/* Tab Switcher */}
               <div className="bg-slate-100 p-1 rounded-xl flex mb-6">
                 <button 
                   onClick={() => { setSearchTab('upload'); stopWebcam(); }}
@@ -1120,7 +1103,6 @@ export default function ClientGallery() {
                 </button>
               </div>
 
-              {/* Error message */}
               {searchError && (
                 <div className="mb-5 bg-rose-50 border border-rose-100 text-rose-700 p-3.5 rounded-xl text-xs flex items-start gap-2.5 font-semibold">
                   <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -1128,12 +1110,10 @@ export default function ClientGallery() {
                 </div>
               )}
 
-              {/* Camera View */}
               {searchTab === 'camera' && webcamStream && (
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-full aspect-[4/3] rounded-2xl border-2 border-slate-200 overflow-hidden bg-black relative">
                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
-                    {/* Face guide overlay */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="w-48 h-48 border-2 border-white/40 rounded-full" />
                     </div>
@@ -1153,12 +1133,10 @@ export default function ClientGallery() {
                 </div>
               )}
 
-              {/* Upload View */}
               {searchTab === 'upload' && (
                 <div className="flex flex-col gap-4">
                   {selfieFile && selfiePreview ? (
                     <div className="flex flex-col items-center gap-4">
-                      {/* Preview */}
                       <div className="relative w-full">
                         <div className="w-full aspect-[4/3] rounded-2xl border-2 border-orange-200 overflow-hidden bg-slate-50 flex items-center justify-center">
                           <img src={selfiePreview} alt="Selfie Preview" className="w-full h-full object-cover" />
@@ -1171,7 +1149,6 @@ export default function ClientGallery() {
                         </button>
                       </div>
 
-                      {/* Action buttons */}
                       <div className="w-full space-y-3">
                         <button 
                           onClick={() => fileInputRef.current?.click()} 
@@ -1181,13 +1158,11 @@ export default function ClientGallery() {
                           Remove & choose another
                         </button>
 
-                        {/* Search button with progress */}
                         <button 
                           onClick={handleAISearch} 
                           disabled={searchLoading} 
                           className="relative w-full bg-[#c5a880] hover:bg-[#b59a72] disabled:opacity-50 text-[#09090b] font-black py-4 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2.5 overflow-hidden"
                         >
-                          {/* Progress bar inside button */}
                           {searchLoading && (
                             <div 
                               className="absolute inset-y-0 left-0 bg-[#09090b]/15 transition-all duration-300 ease-out"
@@ -1211,7 +1186,6 @@ export default function ClientGallery() {
                       </div>
                     </div>
                   ) : (
-                    /* Drop zone */
                     <div
                       onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                       onDragLeave={() => setIsDragOver(false)}
@@ -1228,40 +1202,34 @@ export default function ClientGallery() {
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-bold text-slate-700">
-                          Drag & drop your photo here
+                          Click to upload or drag & drop
                         </p>
                         <p className="text-xs text-slate-400 font-medium mt-1">
-                          or click to browse • JPG, PNG supported
+                          PNG, JPG, WEBP up to 10MB
                         </p>
                       </div>
                     </div>
                   )}
+
                   <input 
-                    type="file" 
                     ref={fileInputRef} 
+                    type="file" 
+                    accept="image/*" 
                     onChange={handleSelfieUploadChange} 
                     className="hidden" 
-                    accept="image/*" 
                   />
                 </div>
               )}
-
-              {/* Privacy note */}
-              <div className="mt-5 flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-                <span>Your photo is only used for face matching and is never stored permanently.</span>
-              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Lightbox - Kept dark for focus on media */}
+      {/* Lightbox */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between p-6">
           <div className="flex items-center justify-between w-full absolute top-6 left-0 px-6 z-10 pointer-events-none">
             <div>
-              {/* Image name removed per request, but keeping AI match badge if it exists */}
               {selectedItem.similarityPercent && (
                 <span className="text-[#FF6B00] font-mono text-xs font-bold bg-black/50 px-3 py-1.5 rounded-lg border border-white/10 pointer-events-auto">
                   {selectedItem.similarityPercent}% AI match
@@ -1284,7 +1252,6 @@ export default function ClientGallery() {
           </div>
 
           <div className="flex-1 flex items-center justify-center p-4 relative h-full w-full">
-            {/* Previous Button */}
             {galleryMedia.findIndex(m => m._id === selectedItem._id) > 0 && (
               <button 
                 onClick={(e) => { e.stopPropagation(); setSelectedItem(galleryMedia[galleryMedia.findIndex(m => m._id === selectedItem._id) - 1]); }} 
@@ -1300,7 +1267,6 @@ export default function ClientGallery() {
               <video ref={playerRef} controls src={resolveMediaUrl(selectedItem)} className="max-w-[85vw] max-h-[85vh] object-contain rounded-xl" />
             )}
 
-            {/* Next Button */}
             {galleryMedia.findIndex(m => m._id === selectedItem._id) < galleryMedia.length - 1 && (
               <button 
                 onClick={(e) => { e.stopPropagation(); setSelectedItem(galleryMedia[galleryMedia.findIndex(m => m._id === selectedItem._id) + 1]); }} 
@@ -1310,28 +1276,6 @@ export default function ClientGallery() {
               </button>
             )}
           </div>
-
-          {selectedItem.type === 'VIDEO' && selectedItem.timestamps && selectedItem.timestamps.length > 0 && (
-             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 max-w-xl w-full glass-panel border-white/10 bg-black/60 backdrop-blur-md p-5 rounded-2xl text-center z-20">
-                <h4 className="text-xs font-bold text-[#FF6B00] uppercase tracking-widest mb-3 flex items-center justify-center gap-1.5">
-                  <Sparkles className="h-4 w-4" />
-                  AI Matched Timestamps
-                </h4>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {selectedItem.timestamps.map((sec: number) => {
-                    const min = Math.floor(sec / 60);
-                    const remSec = sec % 60;
-                    const displayTime = `${min}:${remSec < 10 ? '0' : ''}${remSec}`;
-                    return (
-                      <button key={sec} onClick={() => handleJumpToTimestamp(sec)} className="bg-[#FF6B00] hover:bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-                        <Play className="h-3 w-3 fill-white" />
-                        {displayTime}
-                      </button>
-                    );
-                  })}
-                </div>
-             </div>
-          )}
         </div>
       )}
     </div>
