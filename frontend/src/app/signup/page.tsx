@@ -91,9 +91,8 @@ export default function SignupPage() {
       return;
     }
 
-    const passwordRegex = /^[A-Z](?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&#]).{5,}$/;
-    if (!passwordRegex.test(regPassword)) {
-      toast.error('Password must start with a Capital letter, contain at least 1 number, 1 special character, and small letters.');
+    if (regPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long.');
       setLoading(false);
       return;
     }
@@ -105,7 +104,8 @@ export default function SignupPage() {
     }
 
     try {
-      const subdomain = regStudioName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const randomSuffix = Math.random().toString(36).substring(2, 6);
+      const subdomain = `${regStudioName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${randomSuffix}`;
       await register({
         name: regName,
         email: regEmail,

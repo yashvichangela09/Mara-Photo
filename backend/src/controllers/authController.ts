@@ -32,9 +32,8 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Mobile number must be exactly 10 digits and start with 6, 7, 8, or 9.' });
     }
 
-    const passwordRegex = /^[A-Z](?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&#]).{5,}$/;
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({ error: 'Password must start with a Capital letter, and contain at least 1 number, 1 special character, and small letters.' });
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
