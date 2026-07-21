@@ -547,7 +547,7 @@ export default function CreateEventPage() {
                       <option value="BOTTOM_LEFT">BOTTOM LEFT</option>
                       <option value="TOP_RIGHT">TOP RIGHT</option>
                       <option value="TOP_LEFT">TOP LEFT</option>
-                      <option value="CENTER">CENTER</option>
+                      <option value="BOTTOM_CENTER">BOTTOM CENTER</option>
                     </select>
                   </div>
                   <div className="col-span-1 flex flex-col justify-center">
@@ -592,7 +592,7 @@ export default function CreateEventPage() {
                                   case 'TOP_LEFT': return { top: '4%', left: '4%' };
                                   case 'TOP_RIGHT': return { top: '4%', right: '4%' };
                                   case 'BOTTOM_LEFT': return { bottom: '4%', left: '4%' };
-                                  case 'CENTER': return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+                                  case 'BOTTOM_CENTER': return { bottom: '4%', left: '50%', transform: 'translateX(-50%)' };
                                   case 'BOTTOM_RIGHT': default: return { bottom: '4%', right: '4%' };
                                 }
                               })()
@@ -610,7 +610,7 @@ export default function CreateEventPage() {
                                   case 'TOP_LEFT': return { top: '4%', left: '4%' };
                                   case 'TOP_RIGHT': return { top: '4%', right: '4%' };
                                   case 'BOTTOM_LEFT': return { bottom: '4%', left: '4%' };
-                                  case 'CENTER': return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+                                  case 'BOTTOM_CENTER': return { bottom: '4%', left: '50%', transform: 'translateX(-50%)' };
                                   case 'BOTTOM_RIGHT': default: return { bottom: '4%', right: '4%' };
                                 }
                               })()

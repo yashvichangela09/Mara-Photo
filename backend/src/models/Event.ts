@@ -21,6 +21,7 @@ export interface IEvent extends Document {
   }[];
   accessType: 'PUBLIC' | 'PASSWORD' | 'OTP' | 'QR';
   passwordHash?: string; // used if accessType is 'PASSWORD'
+  passwordPin?: string; // Plain password/pin for studio owner
   studioId: mongoose.Types.ObjectId;
   assignedTeamMembers: mongoose.Types.ObjectId[];
   addToPortfolio?: boolean;
@@ -29,7 +30,7 @@ export interface IEvent extends Document {
     type: 'TEXT' | 'LOGO';
     text?: string;
     logoUrl?: string;
-    position: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER';
+    position: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'BOTTOM_CENTER';
     width: number;
     height: number;
     opacity: number;
@@ -67,6 +68,7 @@ const EventSchema = new Schema<IEvent>({
     default: 'PUBLIC'
   },
   passwordHash: { type: String },
+  passwordPin: { type: String },
   studioId: { type: Schema.Types.ObjectId, ref: 'Studio', required: true },
   assignedTeamMembers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   addToPortfolio: { type: Boolean, default: false },
@@ -77,7 +79,7 @@ const EventSchema = new Schema<IEvent>({
     logoUrl: { type: String },
     position: {
       type: String,
-      enum: ['TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT', 'CENTER'],
+      enum: ['TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT', 'BOTTOM_CENTER'],
       default: 'BOTTOM_RIGHT'
     },
     width: { type: Number, default: 20 },

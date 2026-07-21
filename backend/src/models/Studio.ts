@@ -4,7 +4,7 @@ export interface IWatermarkSettings {
   type: 'TEXT' | 'LOGO' | 'NONE';
   text?: string;
   logoUrl?: string;
-  position: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER';
+  position: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'BOTTOM_CENTER';
   opacity: number; // 0 to 1
   size: number; // 10 to 100 percentage
 }
@@ -49,7 +49,7 @@ const StudioSchema = new Schema<IStudio>({
     logoUrl: { type: String },
     position: { 
       type: String, 
-      enum: ['TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT', 'CENTER'], 
+      enum: ['TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT', 'BOTTOM_CENTER'], 
       default: 'BOTTOM_RIGHT' 
     },
     opacity: { type: Number, default: 0.5, min: 0, max: 1 },

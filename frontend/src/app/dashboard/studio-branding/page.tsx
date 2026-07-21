@@ -169,6 +169,50 @@ export default function StudioBrandingPage() {
                 <input type="text" disabled={studio.subscriptionPlan !== 'ENTERPRISE'} value={studioCustomDomain} onChange={(e) => setStudioCustomDomain(e.target.value)}  className="w-full bg-[#f8f7f4] text-slate-900 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#c5a880] focus:bg-white/[0.04] disabled:opacity-50" />
               </div>
 
+              {/* Studio Default Watermark */}
+              <div className="border-t border-slate-200 pt-5 mt-2 flex flex-col gap-4">
+                <h3 className="text-sm font-extrabold text-slate-900">Default Studio Watermark</h3>
+                
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] text-slate-600 font-bold uppercase tracking-wider">Watermark Type</label>
+                  <select value={wmType} onChange={(e) => setWmType(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#c5a880]">
+                    <option value="NONE">Disabled</option>
+                    <option value="TEXT">Text Watermark</option>
+                    <option value="LOGO">Logo Watermark</option>
+                  </select>
+                </div>
+
+                {wmType === 'TEXT' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[12px] text-slate-600 font-bold uppercase tracking-wider">Watermark Text</label>
+                    <input type="text" value={wmText} onChange={(e) => setWmText(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#c5a880]" placeholder="e.g. Mara Photo" />
+                  </div>
+                )}
+
+                {wmType === 'LOGO' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[12px] text-slate-600 font-bold uppercase tracking-wider">Watermark Logo</label>
+                    <label className="inline-flex items-center justify-center px-4 py-3 bg-white border border-[#c5a880]/30 hover:bg-[#c5a880]/10 text-[#b59a72] rounded-xl text-xs font-extrabold cursor-pointer transition-all shadow-sm w-full text-center">
+                      {uploadingAsset === 'wmLogo' ? 'Uploading...' : (wmLogo ? 'Change Watermark Logo' : 'Upload Watermark Logo')}
+                      <input type="file" accept="image/*" onChange={(e) => handleAssetUpload(e, setWmLogo, 'wmLogo')} className="hidden" />
+                    </label>
+                  </div>
+                )}
+
+                {wmType !== 'NONE' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[12px] text-slate-600 font-bold uppercase tracking-wider">Watermark Position</label>
+                    <select value={wmPos} onChange={(e) => setWmPos(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#c5a880]">
+                      <option value="BOTTOM_RIGHT">BOTTOM RIGHT</option>
+                      <option value="BOTTOM_LEFT">BOTTOM LEFT</option>
+                      <option value="TOP_RIGHT">TOP RIGHT</option>
+                      <option value="TOP_LEFT">TOP LEFT</option>
+                      <option value="BOTTOM_CENTER">BOTTOM CENTER</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
               <button type="submit" disabled={isSaving} className="w-full mt-4 bg-[#c5a880] hover:bg-[#b59a72] text-slate-900 font-bold py-3.5 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                 {isSaving ? <Loader className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
                 {isSaving ? 'Saving...' : 'Save Studio Changes'}

@@ -143,7 +143,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
       case 'TOP_LEFT': return { top: '4%', left: '4%' };
       case 'TOP_RIGHT': return { top: '4%', right: '4%' };
       case 'BOTTOM_LEFT': return { bottom: '4%', left: '4%' };
-      case 'CENTER': return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+      case 'BOTTOM_CENTER': return { bottom: '4%', left: '50%', transform: 'translateX(-50%)' };
       case 'BOTTOM_RIGHT': default: return { bottom: '4%', right: '4%' };
     }
   };
@@ -213,7 +213,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
         type: event.type || 'WEDDING',
         location: event.location || '',
         accessType: event.accessType || 'PUBLIC',
-        password: '',
+        password: event.passwordPin || (event as any).password || '',
         customWatermark: !!event.watermark?.isActive,
         addToPortfolio: !!event.addToPortfolio,
         coverImageUrl: event.coverImageUrl || '',
@@ -595,13 +595,13 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
 
               {formData.accessType === 'PASSWORD' && (
                 <div>
-                  <label className="edit-label text-rose-500">New Password</label>
+                  <label className="edit-label text-[#c5a880] font-bold">Event Password / PIN</label>
                   <input 
                     type="text" 
-                    className="edit-input border-rose-200 focus:border-rose-500 bg-rose-50/30" 
+                    className="edit-input border-[#c5a880]/40 focus:border-[#c5a880] bg-[#f8f5f0]" 
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder="Leave empty to keep current password, or enter a new one"
+                    placeholder="Enter event password"
                   />
                 </div>
               )}
@@ -674,7 +674,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                           <option value="BOTTOM_LEFT">BOTTOM LEFT</option>
                           <option value="TOP_RIGHT">TOP RIGHT</option>
                           <option value="TOP_LEFT">TOP LEFT</option>
-                          <option value="CENTER">CENTER</option>
+                          <option value="BOTTOM_CENTER">BOTTOM CENTER</option>
                         </select>
                       </div>
                       <div className="col-span-1 flex flex-col justify-center">
@@ -772,24 +772,24 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
 
               {event && mediaItems.length > 0 && hasSavedDetails && (
                 <div className="pt-2 mb-4">
-                  <div className="bg-[#f8f5f0] border border-[#e6d5c0] rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-sm">
-                     <h4 className="text-sm font-bold text-slate-800 mb-1">Gallery is Ready</h4>
+                  <div className="bg-[#f8f5f0] border border-[#e6d5c0] rounded-2xl p-5 flex flex-col items-center justify-center text-center shadow-sm">
+                     <h4 className="text-sm font-extrabold text-slate-800 mb-1">Gallery is Ready</h4>
                      <p className="text-xs text-slate-500 mb-4">Share this link with your clients to view {mediaItems.length} media files.</p>
                      {!showGalleryLink ? (
                        <button
                          type="button"
                          onClick={() => setShowGalleryLink(true)}
-                         className="w-full bg-slate-900 hover:bg-slate-800 text-slate-900 font-bold py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                         className="w-full bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-extrabold py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-2"
                        >
                          <span className="text-base leading-none">🔗</span> Generate Public Gallery Link
                        </button>
                      ) : (
-                       <div className="w-full flex items-center bg-white border border-[#e6d5c0] rounded-xl overflow-hidden mt-2">
+                       <div className="w-full flex items-center bg-white border border-[#e6d5c0] rounded-xl overflow-hidden mt-2 shadow-sm">
                           <input 
                             type="text" 
                             readOnly 
                             value={`${window.location.origin}/e/${event.code}`} 
-                            className="flex-1 bg-transparent text-[11px] sm:text-xs text-slate-600 px-3 py-3 outline-none"
+                            className="flex-1 bg-transparent text-[11px] sm:text-xs text-slate-700 font-semibold px-3 py-3 outline-none"
                           />
                           <button
                             type="button"
@@ -798,7 +798,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                               setLinkCopied(true);
                               setTimeout(() => setLinkCopied(false), 2000);
                             }}
-                            className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] px-4 py-3 text-xs font-bold transition-colors flex items-center gap-1 border-l border-[#e6d5c0]"
+                            className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] px-4 py-3 text-xs font-bold transition-colors flex items-center gap-1.5 border-l border-[#e6d5c0]"
                           >
                             {linkCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                             {linkCopied ? 'Copied' : 'Copy'}

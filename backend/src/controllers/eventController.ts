@@ -54,9 +54,11 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
     }
 
     let passwordHash = undefined;
+    let passwordPin = undefined;
     if (accessType === 'PASSWORD' && password) {
       const salt = await bcrypt.genSalt(10);
       passwordHash = await bcrypt.hash(password, salt);
+      passwordPin = password;
     }
 
     // Map team emails to user Object IDs
@@ -87,6 +89,7 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
       days,
       accessType,
       passwordHash,
+      passwordPin,
       studioId: studio._id,
       assignedTeamMembers,
       addToPortfolio: addToPortfolio || false,
@@ -180,9 +183,10 @@ export const getEventByCode = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Event gallery not found' });
     }
 
-    // Redact passwordHash before sending
+    // Redact passwordHash and passwordPin before sending to public visitors
     const eventObj = event.toObject();
     delete eventObj.passwordHash;
+    delete eventObj.passwordPin;
 
     return res.json({ event: eventObj });
   } catch (err: any) {
@@ -321,8 +325,10 @@ export const updateEvent = async (req: AuthRequest, res: Response) => {
       if (accessType === 'PASSWORD' && password) {
         const salt = await bcrypt.genSalt(10);
         event.passwordHash = await bcrypt.hash(password, salt);
+        event.passwordPin = password;
       } else if (accessType !== 'PASSWORD') {
         event.passwordHash = undefined;
+        event.passwordPin = undefined;
       }
     }
 

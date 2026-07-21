@@ -70,8 +70,8 @@ const getWatermarkPosition = (
       return { left: imgWidth - wWidth - margin, top: margin };
     case 'BOTTOM_LEFT':
       return { left: margin, top: imgHeight - wHeight - margin };
-    case 'CENTER':
-      return { left: Math.round((imgWidth - wWidth) / 2), top: Math.round((imgHeight - wHeight) / 2) };
+    case 'BOTTOM_CENTER':
+      return { left: Math.round((imgWidth - wWidth) / 2), top: imgHeight - wHeight - margin };
     case 'BOTTOM_RIGHT':
     default:
       return { left: imgWidth - wWidth - margin, top: imgHeight - wHeight - margin };
@@ -175,18 +175,18 @@ const applyWatermark = async (
         textAnchor = 'start';
         dominantBaseline = 'auto';
         break;
+      case 'BOTTOM_CENTER':
+        textX = '50%';
+        textY = `${height - margin}`;
+        textAnchor = 'middle';
+        dominantBaseline = 'auto';
+        break;
       case 'BOTTOM_RIGHT':
+      default:
         textX = `${width - margin}`;
         textY = `${height - margin}`;
         textAnchor = 'end';
         dominantBaseline = 'auto';
-        break;
-      case 'CENTER':
-      default:
-        textX = '50%';
-        textY = '50%';
-        textAnchor = 'middle';
-        dominantBaseline = 'middle';
         break;
     }
 
