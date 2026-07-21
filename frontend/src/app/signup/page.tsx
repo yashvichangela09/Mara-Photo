@@ -24,6 +24,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [emailExists, setEmailExists] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
@@ -128,7 +129,7 @@ export default function SignupPage() {
   const handleGoogleSuccess = async (credentialResponse: any) => {
     if (!credentialResponse.credential) return;
     try {
-      setLoading(true);
+      setGoogleLoading(true);
       if (googleLogin) {
         await googleLogin(credentialResponse.credential);
         toast.success('Google sign-up successful!');
@@ -139,7 +140,7 @@ export default function SignupPage() {
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'Google sign-up failed.');
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
@@ -671,6 +672,16 @@ export default function SignupPage() {
 
           <div className="auth-divider" style={{ marginTop: '24px' }}>or continue with Google</div>
 
+          {googleLoading ? (
+            <div style={{
+              width: '100%', padding: '16px', background: '#fff', border: '1.5px solid #c5a880',
+              borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: '10px', fontWeight: 700, fontSize: '13px', color: '#64748b'
+            }}>
+              <Loader className="w-4 h-4" style={{ animation: 'spin 1s linear infinite', color: '#c5a880' }} />
+              <span>Signing in with Google...</span>
+            </div>
+          ) : (
           <div className="google-auth-wrapper">
              <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'dummy-client-id'}>
                <GoogleLogin
@@ -693,6 +704,7 @@ export default function SignupPage() {
                Continue with Google
              </div>
           </div>
+          )}
 
           <div className="signup-footer">
             Already have an account? <Link href="/login">Sign In</Link>
