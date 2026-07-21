@@ -102,7 +102,7 @@ export default function QuotationPage() {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Invoice - ${clientName}</title>
+            <title>Quotation - ${clientName}</title>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
             <style>
               * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -315,7 +315,8 @@ export default function QuotationPage() {
               .status-rejected { background: #fee2e2; color: #991b1b; }
 
               @media print {
-                body { padding: 0; background: white; }
+                @page { margin: 0; }
+                body { padding: 15mm; background: white; }
                 .invoice-page { max-width: 100%; box-shadow: none; }
                 .no-print { display: none !important; }
               }
@@ -334,7 +335,7 @@ export default function QuotationPage() {
                   </div>
                 </div>
                 <div class="invoice-badge">
-                  <h2>Invoice</h2>
+                  <h2>Quotation</h2>
                   <div class="quote-num">${quoteNumber}</div>
                 </div>
               </div>
@@ -342,20 +343,12 @@ export default function QuotationPage() {
               <!-- Meta -->
               <div class="invoice-meta">
                 <div class="meta-block">
-                  <h4>Billed To</h4>
-                  <p>${clientName}</p>
-                </div>
-                <div class="meta-block">
-                  <h4>Invoice Date</h4>
+                  <h4>Quotation Date</h4>
                   <p>${quoteDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                 </div>
                 <div class="meta-block">
                   <h4>Valid Until</h4>
                   <p>${validUntil.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                </div>
-                <div class="meta-block">
-                  <h4>Status</h4>
-                  <span class="status-badge status-${(quote.status || 'Pending').toLowerCase()}">${quote.status || 'Pending'}</span>
                 </div>
               </div>
 
@@ -400,7 +393,7 @@ export default function QuotationPage() {
               <div class="invoice-footer">
                 <div class="footer-note">
                   Thank you for choosing <strong>${studioName}</strong>.<br/>
-                  This is a computer-generated invoice. For any queries, please contact us at <strong>${studioEmail || 'our studio'}</strong>.
+                  This is a computer-generated quotation for <strong>${clientName}</strong>. For any queries, please contact us at <strong>${studioEmail || 'our studio'}</strong>.
                 </div>
                 <div class="footer-brand">
                   <div class="brand-name">${studioName}</div>

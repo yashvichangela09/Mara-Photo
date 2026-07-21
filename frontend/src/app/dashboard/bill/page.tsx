@@ -91,23 +91,151 @@ export default function BillPage() {
     setBillSubView('edit');
   };
 
+  const printBill = (billData: any) => {
+    const studioName = studio?.name || 'Mara Photo';
+    const studioLogo = studio?.logoUrl || '';
+    const studioEmail = sessionUser?.email || '';
+    const studioPhone = sessionUser?.phone || sessionUser?.mobile || '';
+    const clientName = billData.clientName || billData.client || '';
+    const amount = billData.amount || 0;
+    const advance = billData.advance || 0;
+    const balance = Math.max(0, amount - advance);
+    const billDate = new Date(billData.issueDate || billData.date || Date.now());
+    const billNumber = billData.invoiceNo || billData.id || `INV-${Math.random().toString(36).substring(2,8).toUpperCase()}`;
+    const eventName = billData.eventName || 'Photography / Videography Services';
+    const status = billData.status || 'Pending';
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Bill - ${clientName}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { font-family: 'Inter', -apple-system, sans-serif; background: #f8f7f4; color: #1e293b; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+              .invoice-page { max-width: 800px; margin: 0 auto; background: white; min-height: 100vh; position: relative; }
+              .invoice-header { background: linear-gradient(135deg, #0c0c0e 0%, #1a1a2e 100%); color: white; padding: 40px 48px; display: flex; justify-content: space-between; align-items: flex-start; }
+              .studio-info { display: flex; align-items: center; gap: 16px; }
+              .studio-logo { width: 56px; height: 56px; border-radius: 14px; object-fit: contain; background: rgba(255,255,255,0.08); padding: 6px; border: 1px solid rgba(197,168,128,0.3); }
+              .studio-name { font-size: 22px; font-weight: 800; letter-spacing: 0.02em; }
+              .studio-email { font-size: 11px; font-weight: 500; color: #c5a880; margin-top: 4px; letter-spacing: 0.03em; }
+              .invoice-badge { text-align: right; }
+              .invoice-badge h2 { font-size: 28px; font-weight: 900; letter-spacing: 0.08em; color: #c5a880; text-transform: uppercase; }
+              .invoice-badge .quote-num { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); margin-top: 6px; letter-spacing: 0.05em; }
+              .invoice-meta { display: flex; justify-content: space-between; padding: 32px 48px; border-bottom: 1px solid #f1f0ed; }
+              .meta-block h4 { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #94a3b8; margin-bottom: 8px; }
+              .meta-block p { font-size: 14px; font-weight: 600; color: #1e293b; }
+              .invoice-table { padding: 0 48px; margin-top: 24px; }
+              table { width: 100%; border-collapse: collapse; }
+              thead th { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; padding: 12px 16px; text-align: left; border-bottom: 2px solid #f1f0ed; }
+              thead th:last-child { text-align: right; }
+              tbody td { padding: 16px 16px; border-bottom: 1px solid #f8f7f4; vertical-align: top; }
+              tbody td:last-child { text-align: right; font-weight: 700; white-space: nowrap; }
+              .item-name { font-size: 14px; font-weight: 600; color: #1e293b; }
+              .item-num { font-size: 12px; font-weight: 500; color: #94a3b8; }
+              .item-price { font-size: 14px; font-weight: 700; color: #1e293b; }
+              .invoice-total { padding: 24px 48px; margin-top: 16px; }
+              .total-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+              .total-row.grand { border-top: 2px solid #0c0c0e; margin-top: 8px; padding-top: 16px; }
+              .total-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
+              .total-value { font-size: 14px; font-weight: 700; color: #1e293b; }
+              .grand .total-label { font-size: 14px; font-weight: 800; color: #0c0c0e; }
+              .grand .total-value { font-size: 28px; font-weight: 900; color: #c5a880; }
+              .invoice-footer { margin-top: 48px; padding: 32px 48px; border-top: 1px solid #f1f0ed; display: flex; justify-content: space-between; align-items: flex-end; }
+              .footer-note { font-size: 11px; font-weight: 500; color: #94a3b8; line-height: 1.7; max-width: 340px; }
+              .footer-brand { text-align: right; }
+              .footer-brand .brand-name { font-size: 16px; font-weight: 800; color: #c5a880; letter-spacing: 0.04em; }
+              .footer-brand .brand-tagline { font-size: 9px; font-weight: 600; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px; }
+              .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+              .status-pending { background: #fef3c7; color: #92400e; }
+              .status-paid { background: #d1fae5; color: #065f46; }
+              .status-overdue { background: #fee2e2; color: #991b1b; }
+              @media print { @page { margin: 0; } body { padding: 15mm; background: white; } .invoice-page { max-width: 100%; box-shadow: none; } }
+            </style>
+          </head>
+          <body>
+            <div class="invoice-page">
+              <div class="invoice-header">
+                <div class="studio-info">
+                  ${studioLogo ? `<img src="${studioLogo}" class="studio-logo" alt="Logo" />` : `<div class="studio-logo" style="display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#c5a880;">${studioName.charAt(0)}</div>`}
+                  <div>
+                    <div class="studio-name">${studioName}</div>
+                    ${studioEmail ? `<div class="studio-email">${studioEmail}</div>` : ''}
+                    ${studioPhone ? `<div class="studio-email">${studioPhone}</div>` : ''}
+                  </div>
+                </div>
+                <div class="invoice-badge">
+                  <h2>Bill</h2>
+                  <div class="quote-num">${billNumber}</div>
+                </div>
+              </div>
+              <div class="invoice-meta">
+                <div class="meta-block">
+                  <h4>Bill Date</h4>
+                  <p>${billDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                </div>
+                <div class="meta-block">
+                  <h4>Status</h4>
+                  <span class="status-badge status-${status.toLowerCase()}">${status}</span>
+                </div>
+              </div>
+              <div class="invoice-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:40px">#</th>
+                      <th>Description</th>
+                      <th style="text-align:right">Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="item-num">01</td>
+                      <td>
+                        <div class="item-name">${eventName}</div>
+                      </td>
+                      <td class="item-price">₹${Number(amount).toLocaleString('en-IN')}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="invoice-total">
+                <div class="total-row">
+                  <span class="total-label">Subtotal</span>
+                  <span class="total-value">₹${Number(amount).toLocaleString('en-IN')}</span>
+                </div>
+                <div class="total-row">
+                  <span class="total-label" style="color: #065f46">Advance / Token Paid</span>
+                  <span class="total-value" style="color: #065f46">- ₹${Number(advance).toLocaleString('en-IN')}</span>
+                </div>
+                <div class="total-row grand">
+                  <span class="total-label">Balance Due</span>
+                  <span class="total-value">₹${Number(balance).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+              <div class="invoice-footer">
+                <div class="footer-note">
+                  Thank you for choosing <strong>${studioName}</strong>.<br/>
+                  This is a computer-generated bill for <strong>${clientName}</strong>. For any queries, please contact us at <strong>${studioEmail || 'our studio'}</strong>.
+                </div>
+                <div class="footer-brand">
+                  <div class="brand-name">${studioName}</div>
+                  <div class="brand-tagline">Professional Photography</div>
+                </div>
+              </div>
+            </div>
+            <script>window.onload = () => window.print();</script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
   const handlePrintExisting = (bill: any) => {
-    setNewBillClient(bill.clientName || bill.client || '');
-    setNewBillEmail(bill.clientEmail || '');
-    setNewBillMobile(bill.clientMobile || '');
-    setNewBillEventName(bill.eventName || '');
-    setNewEventDate(bill.eventDate ? bill.eventDate.split('T')[0] : '');
-    setNewBillDate(bill.issueDate ? bill.issueDate.split('T')[0] : (bill.date || ''));
-    setNewBillAmount(bill.amount?.toString() || '');
-    setNewBillAdvance(bill.advance?.toString() || '');
-    setNewTokenPaymentDate(bill.tokenPaymentDate ? bill.tokenPaymentDate.split('T')[0] : '');
-    setNewPaymentMethod(bill.paymentMethod || 'Cash');
-    setNewBillStatus(bill.status || 'Pending');
-    
-    setTimeout(() => {
-      window.print();
-      resetForm();
-    }, 150);
+    printBill(bill);
   };
 
   const resetForm = () => {
@@ -164,19 +292,20 @@ export default function BillPage() {
         status: newBillStatus || 'Pending'
       };
       
+      let finalData;
       if (billSubView === 'edit' && editingBill) {
         const res = await apiClient.put(`/dashboard/bills/${editingBill._id}`, reqBody);
         setBills(bills.map((b: any) => b._id === editingBill._id ? res.data : b));
+        finalData = res.data;
       } else {
         const res = await apiClient.post('/dashboard/bills', reqBody);
         setBills([res.data, ...bills]);
+        finalData = res.data;
       }
       
       if (shouldPrint) {
-        setTimeout(() => {
-          window.print();
-          resetForm();
-        }, 100);
+        printBill(finalData);
+        resetForm();
       } else {
         setSuccessMsg(billSubView === 'edit' ? 'Invoice updated successfully!' : 'GST Invoice created successfully!');
         resetForm();
@@ -435,82 +564,7 @@ export default function BillPage() {
               </div>
             )}
 
-            {/* PRINT LAYOUT */}
-            <div className="hidden print:block fixed inset-0 z-[99999] bg-[#f8f7f4] text-slate-900 p-12">
-              <div className="max-w-4xl mx-auto flex flex-col gap-8">
-                {/* Header */}
-                <div className="flex justify-between items-start border-b-2 border-slate-900 pb-8">
-                  <div>
-                    <h1 className="text-4xl font-extrabold tracking-tighter text-slate-900 mb-2">INVOICE</h1>
-                    <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">Mara Photo Studio</p>
-                  </div>
-                  <div className="text-right">
-                    <img src={studio?.logoUrl || "/logo.png"} alt="Studio Logo" className={`h-14 object-contain ml-auto mb-2 ${!studio?.logoUrl ? 'filter grayscale brightness-0 opacity-80' : ''}`} />
-                    <p className="text-xs text-slate-500">maraphoto.com</p>
-                    <p className="text-xs text-slate-500">+91 9876543210</p>
-                  </div>
-                </div>
 
-                {/* Details */}
-                <div className="flex justify-between items-start">
-                  <div className="flex flex-col gap-1">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Billed To</p>
-                    <h3 className="text-lg font-bold text-slate-900">{newBillClient || 'Client Name'}</h3>
-                    {newBillEmail && <p className="text-sm text-slate-400">{newBillEmail}</p>}
-                    {newBillMobile && <p className="text-sm text-slate-400">{newBillMobile}</p>}
-                    {newBillEventName && <p className="text-sm text-slate-400 font-semibold mt-1">Event: {newBillEventName}</p>}
-                  </div>
-                  <div className="flex flex-col gap-1 text-right">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Invoice Details</p>
-                    <p className="text-sm text-slate-900 font-bold">No: INV-2026-{String(bills.length + 101).padStart(3, '0')}</p>
-                    <p className="text-sm text-slate-400">Date: {newBillDate || new Date().toISOString().split('T')[0]}</p>
-                    <p className="text-sm text-slate-400 font-bold">Status: <span className="uppercase">{newBillStatus}</span></p>
-                  </div>
-                </div>
-
-                {/* Table */}
-                <div className="mt-8">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b-2 border-slate-200">
-                        <th className="py-3 text-xs font-bold uppercase tracking-wider text-slate-500">Description</th>
-                        <th className="py-3 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-b border-slate-100">
-                        <td className="py-4 text-sm font-semibold text-slate-900">Photography / Videography Services - {newBillEventName || 'Event Package'}</td>
-                        <td className="py-4 text-sm font-bold text-slate-900 text-right">₹{parseFloat(newBillAmount || '0').toLocaleString()}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Summary */}
-                <div className="flex justify-end mt-4">
-                  <div className="w-1/2 flex flex-col gap-3">
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm font-semibold text-slate-500">Subtotal</p>
-                      <p className="text-sm font-bold text-slate-900">₹{parseFloat(newBillAmount || '0').toLocaleString()}</p>
-                    </div>
-                    <div className="flex justify-between items-center text-[#c5a880]">
-                      <p className="text-sm font-semibold">Advance / Token Paid</p>
-                      <p className="text-sm font-bold">- ₹{parseFloat(newBillAdvance || '0').toLocaleString()}</p>
-                    </div>
-                    <div className="flex justify-between items-center border-t-2 border-slate-900 pt-3 mt-1">
-                      <p className="text-lg font-black text-slate-900 uppercase">Balance Due</p>
-                      <p className="text-2xl font-black text-rose-500">₹{Math.max(0, parseFloat(newBillAmount || '0') - parseFloat(newBillAdvance || '0')).toLocaleString()}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="mt-16 pt-8 border-t border-slate-200 text-center flex flex-col gap-1">
-                  <p className="text-sm font-bold text-slate-900">Thank you for choosing Mara Photo Studio!</p>
-                  <p className="text-xs text-slate-500">All balances are due prior to final deliverables unless agreed otherwise.</p>
-                </div>
-              </div>
-            </div>
 
           </div>
     </div>
