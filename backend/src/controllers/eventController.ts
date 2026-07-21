@@ -177,7 +177,11 @@ export const getEventByCode = async (req: Request, res: Response) => {
 
   try {
     const event = await Event.findOne({ code })
-      .populate('studioId', 'name logoUrl watermark customDomain subdomain');
+      .populate({
+        path: 'studioId',
+        select: 'name logoUrl watermark customDomain subdomain ownerId paymentDetails',
+        populate: { path: 'ownerId', select: 'email phone name' }
+      });
     
     if (!event) {
       return res.status(404).json({ error: 'Event gallery not found' });

@@ -391,18 +391,44 @@ export default function ClientGallery() {
     }
   };
 
+  const downloadSingleFile = async (url: string, fileName?: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName || url.split('/').pop()?.split('?')[0] || `media_${Date.now()}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName || 'download';
+      a.target = '_self';
+      a.click();
+    }
+  };
+
+  const [downloadingBulk, setDownloadingBulk] = useState(false);
   const handleBulkDownload = async () => {
     if (selectedMediaIds.length === 0) return;
+    setDownloadingBulk(true);
     try {
       const res = await apiClient.post('/media/download-bulk', { mediaIds: selectedMediaIds });
       const downloads = res.data.downloads || [];
       for (const d of downloads) {
-        window.open(d.url, '_blank');
+        await downloadSingleFile(d.url, d.name || `photo_${Date.now()}`);
+        await new Promise((r) => setTimeout(r, 350));
       }
       setSelectedMediaIds([]);
       setIsMultiSelect(false);
     } catch (err) {
       console.error(err);
+    } finally {
+      setDownloadingBulk(false);
     }
   };
 
@@ -617,20 +643,21 @@ export default function ClientGallery() {
 
   return (
     <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col relative font-poppins selection:bg-[#c5a880] selection:text-[#09090b]">
-      {/* Whitelabel Header */}
-      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-[#e3d8c8]/60 shadow-sm transition-all">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* Whitelabel Header with Bigger Logo & Studio Name */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-[#e3d8c8]/60 shadow-sm transition-all">
+        <div className="max-w-7xl mx-auto px-6 h-22 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             {event?.studioId?.logoUrl ? (
-              <img src={event.studioId.logoUrl} alt="Logo" className="h-9 max-w-[150px] object-contain" />
+              <img src={event.studioId.logoUrl} alt="Logo" className="h-12 md:h-14 max-w-[200px] object-contain shrink-0" />
             ) : (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
-                <span className="font-extrabold text-sm tracking-widest text-[#09090b] uppercase">
-                  {event?.studioId?.name || 'Mara Photo'}
-                </span>
-              </div>
+              <div className="w-10 h-10 rounded-xl bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-sm shadow-sm">M</div>
             )}
+            <div className="flex flex-col">
+              <span className="font-extrabold text-base md:text-xl text-[#09090b] tracking-tight">
+                {event?.studioId?.name || 'Mara Photo Studio'}
+              </span>
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Official Gallery</span>
+            </div>
           </div>
           
           <div className="flex items-center gap-3">
@@ -638,8 +665,8 @@ export default function ClientGallery() {
               {event?.name}
             </span>
             {event?.date && (
-              <span className="text-xs font-bold text-slate-600 bg-white border border-[#e3d8c8] px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
-                <CalendarDays className="h-3.5 w-3.5 text-[#c5a880]" />
+              <span className="text-xs font-bold text-slate-600 bg-white border border-[#e3d8c8] px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm">
+                <CalendarDays className="h-4 w-4 text-[#c5a880]" />
                 {new Date(event.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
               </span>
             )}
@@ -647,63 +674,96 @@ export default function ClientGallery() {
         </div>
       </header>
 
-      {/* Unique Luxury Hero Presentation */}
-      <div className="relative w-full bg-[#09090b] text-white py-16 px-6 overflow-hidden">
+      {/* Clear Cover Hero Presentation with Find My Photos Button embedded inside */}
+      <div className="relative w-full bg-[#09090b] text-white py-14 sm:py-20 px-6 overflow-hidden">
         {event?.coverImageUrl ? (
-          <img src={event.coverImageUrl} alt="Cover" className="absolute inset-0 w-full h-full object-cover opacity-35 scale-105 filter blur-[2px]" />
+          <img src={event.coverImageUrl} alt="Cover" className="absolute inset-0 w-full h-full object-cover opacity-65 scale-100 transition-all duration-700" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-[#1a1714] to-[#09090b] opacity-90" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent" />
 
-        <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-start gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] uppercase font-black tracking-widest bg-[#c5a880] text-[#09090b] px-3 py-1 rounded-full shadow-md">
+        <div className="relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="flex flex-col items-start gap-3.5 max-w-2xl">
+            <span className="text-[10px] uppercase font-black tracking-widest bg-[#c5a880] text-[#09090b] px-3.5 py-1.5 rounded-full shadow-md">
               {event?.type || 'EVENT GALLERY'}
             </span>
-            {event?.clientName && (
-              <span className="text-[10px] uppercase font-bold tracking-wider bg-white/10 backdrop-blur-md text-white/90 px-3 py-1 rounded-full border border-white/15">
-                Client: {event.clientName}
-              </span>
-            )}
-          </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white drop-shadow-md">
-            {event?.name}
-          </h1>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white drop-shadow-lg">
+              {event?.name}
+            </h1>
 
-          <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 mt-1">
-            {event?.date && (
-              <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10">
-                <CalendarDays className="h-4 w-4 text-[#c5a880]" />
-                <span>{new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-200 mt-1">
+              {event?.date && (
+                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20">
+                  <CalendarDays className="h-4 w-4 text-[#c5a880]" />
+                  <span>{new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </div>
+              )}
+              {event?.location && (
+                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20">
+                  <MapPin className="h-4 w-4 text-[#c5a880]" />
+                  <span>{event.location}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20">
+                <ImageIcon className="h-4 w-4 text-[#c5a880]" />
+                <span>{media.length} Media Files</span>
               </div>
-            )}
-            {event?.location && (
-              <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10">
-                <MapPin className="h-4 w-4 text-[#c5a880]" />
-                <span>{event.location}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10">
-              <ImageIcon className="h-4 w-4 text-[#c5a880]" />
-              <span>{media.length} Media Files</span>
             </div>
           </div>
+
+          {/* Embedded Find My Photos Button in Hero */}
+          <button 
+            onClick={() => setSearchModalOpen(true)}
+            className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black px-6 py-4 rounded-2xl shadow-2xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2.5 border border-white/20 shrink-0 cursor-pointer"
+          >
+            <ScanFace className="h-5 w-5 text-[#09090b]" />
+            <span className="text-sm uppercase tracking-wider">Find My Photos</span>
+            <ChevronRight className="h-4 w-4 opacity-70" />
+          </button>
         </div>
       </div>
 
-      {/* Gallery Controls bar */}
-      <div className="max-w-7xl mx-auto w-full px-6 py-6 flex items-center justify-between border-b border-[#e3d8c8]/50">
-        <div className="flex items-center gap-3">
-          {searchActive && searchStats && (
-            <span className="text-xs text-slate-500 font-bold ml-2">
-              Scanned {searchStats.totalSearched} face(s) in album
-            </span>
-          )}
+      {/* Gallery Controls bar & Filter Tabs */}
+      <div className="max-w-7xl mx-auto w-full px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-[#e3d8c8]/50">
+        {/* Media Filter Tabs */}
+        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+          <button 
+            onClick={() => setMediaFilter('ALL')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
+              mediaFilter === 'ALL' 
+                ? 'bg-[#09090b] text-white shadow-md' 
+                : 'bg-white text-slate-700 border border-[#e3d8c8] hover:bg-[#faf9f6]'
+            }`}
+          >
+            All Media ({media.length})
+          </button>
+          <button 
+            onClick={() => setMediaFilter('PHOTO')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              mediaFilter === 'PHOTO' 
+                ? 'bg-[#09090b] text-white shadow-md' 
+                : 'bg-white text-slate-700 border border-[#e3d8c8] hover:bg-[#faf9f6]'
+            }`}
+          >
+            <ImageIcon className="h-3.5 w-3.5 text-[#c5a880]" />
+            Photos ({media.filter(m => m.type !== 'VIDEO').length})
+          </button>
+          <button 
+            onClick={() => setMediaFilter('VIDEO')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              mediaFilter === 'VIDEO' 
+                ? 'bg-[#09090b] text-white shadow-md' 
+                : 'bg-white text-slate-700 border border-[#e3d8c8] hover:bg-[#faf9f6]'
+            }`}
+          >
+            <Video className="h-3.5 w-3.5 text-[#c5a880]" />
+            Videos ({media.filter(m => m.type === 'VIDEO').length})
+          </button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
           {searchActive && (
             <button onClick={clearSearch} className="text-xs text-rose-600 hover:text-rose-700 font-bold underline flex items-center gap-1">
               <X className="h-3.5 w-3.5" />
@@ -714,16 +774,20 @@ export default function ClientGallery() {
           {isMultiSelect ? (
             <div className="flex items-center gap-3">
               <span className="text-xs text-slate-600 font-bold">Selected: <strong>{selectedMediaIds.length}</strong></span>
-              <button onClick={handleBulkDownload} disabled={selectedMediaIds.length === 0} className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] text-xs font-extrabold px-4 py-2 rounded-xl disabled:opacity-50 flex items-center gap-1.5 transition-colors shadow-sm">
-                <Download className="h-3.5 w-3.5" />
-                Download Selected
+              <button 
+                onClick={handleBulkDownload} 
+                disabled={selectedMediaIds.length === 0 || downloadingBulk} 
+                className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] text-xs font-extrabold px-4 py-2.5 rounded-xl disabled:opacity-50 flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+              >
+                {downloadingBulk ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                {downloadingBulk ? 'Downloading...' : 'Download Selected'}
               </button>
               <button onClick={() => { setIsMultiSelect(false); setSelectedMediaIds([]); }} className="text-xs text-slate-500 hover:text-slate-700 font-bold">
                 Cancel
               </button>
             </div>
           ) : (
-            <button onClick={() => setIsMultiSelect(true)} className="text-xs text-[#09090b] hover:text-[#c5a880] border border-[#e3d8c8] bg-white rounded-xl px-4 py-2.5 hover:bg-[#faf9f6] transition-colors shadow-sm font-bold flex items-center gap-2">
+            <button onClick={() => setIsMultiSelect(true)} className="text-xs text-[#09090b] hover:text-[#c5a880] border border-[#e3d8c8] bg-white rounded-xl px-4 py-2.5 hover:bg-[#faf9f6] transition-colors shadow-sm font-bold flex items-center gap-2 cursor-pointer">
               <Check className="h-3.5 w-3.5 text-[#c5a880]" />
               Select Multiple
             </button>
@@ -770,8 +834,8 @@ export default function ClientGallery() {
                      return (
                        <div 
                          {...rest} 
-                         style={{ ...style, overflow: 'hidden', borderRadius: '0.75rem' }} 
-                         className={`group relative transition-all duration-300 bg-slate-100 flex items-center justify-center ${isSelected ? 'border-2 border-[#FF6B00] ring-4 ring-[#FF6B00]/20 shadow-lg scale-95' : 'border border-slate-200/60 shadow-sm hover:shadow-xl hover:-translate-y-1 z-0 hover:z-10 cursor-pointer'}`}
+                         style={{ ...style, position: 'relative', overflow: 'hidden', borderRadius: '0.75rem' }} 
+                         className={`group transition-all duration-300 bg-slate-100 flex items-center justify-center ${isSelected ? 'border-2 border-[#c5a880] ring-4 ring-[#c5a880]/20 shadow-lg scale-95' : 'border border-slate-200/60 shadow-sm hover:shadow-xl hover:-translate-y-1 z-0 hover:z-10 cursor-pointer'}`}
                        >
                          {children}
                        </div>
@@ -947,26 +1011,55 @@ export default function ClientGallery() {
         </div>
       </button>
 
-      {/* Footer */}
-      <footer className="mt-16 bg-[#09090b] text-white border-t border-white/10 py-10 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
-          <div className="flex items-center gap-3">
-            {event?.studioId?.logoUrl ? (
-              <img src={event.studioId.logoUrl} alt="Logo" className="h-8 max-w-[130px] object-contain brightness-125" />
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-md bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
-                <span className="font-extrabold text-sm tracking-wider text-white uppercase">
-                  {event?.studioId?.name || 'Mara Photo Studio'}
-                </span>
+      {/* Rich Contact Footer */}
+      <footer className="mt-20 bg-[#09090b] text-white border-t border-white/10 py-14 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              {event?.studioId?.logoUrl ? (
+                <img src={event.studioId.logoUrl} alt="Logo" className="h-10 max-w-[160px] object-contain brightness-125" />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
+                  <span className="font-extrabold text-base tracking-wider text-white uppercase">
+                    {event?.studioId?.name || 'Mara Photo Studio'}
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 max-w-sm font-medium leading-relaxed">
+              Capturing timeless memories with AI-powered gallery distribution & high-resolution delivery.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-6 text-xs text-slate-300 font-medium">
+            {event?.studioId?.ownerId?.email && (
+              <a href={`mailto:${event.studioId.ownerId.email}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-colors">
+                <Mail className="h-4 w-4 text-[#c5a880]" />
+                <span>{event.studioId.ownerId.email}</span>
+              </a>
+            )}
+            {event?.studioId?.ownerId?.phone && (
+              <a href={`tel:${event.studioId.ownerId.phone}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-colors">
+                <Phone className="h-4 w-4 text-[#c5a880]" />
+                <span>{event.studioId.ownerId.phone}</span>
+              </a>
+            )}
+            {event?.location && (
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl">
+                <MapPin className="h-4 w-4 text-[#c5a880]" />
+                <span>{event.location}</span>
               </div>
             )}
           </div>
+        </div>
 
-          <div className="text-xs text-slate-400 font-medium flex items-center gap-1">
+        <div className="max-w-7xl mx-auto border-t border-white/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500 font-semibold">
+          <p>© {new Date().getFullYear()} {event?.studioId?.name || 'Mara Photo'}. All rights reserved.</p>
+          <p className="flex items-center gap-1">
             <span>Delivered with passion via</span>
-            <span className="text-[#c5a880] font-bold">Mara Photo AI Gallery</span>
-          </div>
+            <span className="text-[#c5a880] font-extrabold">Mara Photo AI Gallery</span>
+          </p>
         </div>
       </footer>
 
@@ -1171,13 +1264,16 @@ export default function ClientGallery() {
               )}
             </div>
             <div className="flex items-center gap-4 pointer-events-auto">
-              <a href={resolveMediaUrl(selectedItem)} target="_blank" className="bg-white/10 hover:bg-white/20 px-4 py-2 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition-colors border border-white/10">
+              <button 
+                onClick={() => downloadSingleFile(resolveMediaUrl(selectedItem), `${selectedItem.name || 'media'}_${selectedItem._id}`)} 
+                className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] px-4 py-2 rounded-xl flex items-center gap-2 font-black text-xs uppercase tracking-wider transition-colors shadow-md cursor-pointer"
+              >
                 <Download className="h-4 w-4" />
                 Download
-              </a>
-              <button onClick={() => setSelectedItem(null)} className="bg-white/10 hover:bg-rose-500/90 px-4 py-2 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition-colors border border-white/10">
+              </button>
+              <button onClick={() => setSelectedItem(null)} className="bg-white/10 hover:bg-rose-500/90 px-4 py-2 text-white rounded-xl flex items-center gap-2 font-bold text-xs transition-colors border border-white/10">
                 <X className="h-4 w-4" />
-                Cancel
+                Close
               </button>
             </div>
           </div>
