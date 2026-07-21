@@ -384,42 +384,71 @@ export default function EventPhotosPage() {
 
   if (isLocked) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white border border-slate-200 p-8 rounded-3xl text-center shadow-xl">
-          <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center mx-auto mb-6">
-            <Lock className="h-6 w-6 text-[#FF6B00]" />
+      <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-between p-6 relative overflow-hidden font-poppins">
+        {/* Background glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
+
+        {/* Top Header */}
+        <div className="w-full max-w-5xl flex items-center justify-between py-4 z-10">
+          <div className="flex items-center gap-3">
+            {event?.studioId?.logoUrl ? (
+              <img src={event.studioId.logoUrl} alt="Studio Logo" className="h-9 max-w-[140px] object-contain" />
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
+                <span className="font-extrabold text-sm tracking-wider text-[#09090b] uppercase">
+                  {event?.studioId?.name || 'Mara Photo'}
+                </span>
+              </div>
+            )}
           </div>
-          <h2 className="text-xl font-extrabold text-slate-800">{event?.name || 'Private Event'}</h2>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3 py-1.5 rounded-full border border-[#c5a880]/20">
+            Protected Gallery
+          </span>
+        </div>
+
+        {/* Password Card */}
+        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8] p-8 sm:p-10 rounded-3xl text-center shadow-xl relative z-10 my-auto">
+          <div className="w-14 h-14 rounded-2xl bg-[#c5a880]/15 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-6 text-[#c5a880]">
+            <Lock className="h-6 w-6 text-[#c5a880]" />
+          </div>
+          <h2 className="text-2xl font-extrabold text-[#09090b] tracking-tight">{event?.name || 'Private Event'}</h2>
           <p className="text-xs text-slate-500 font-semibold mt-2 leading-relaxed">
             This gallery is password protected.<br />Enter the password to view the photos.
           </p>
 
           {authError && (
-            <div className="mt-4 bg-rose-50 border border-rose-100 text-rose-600 p-3 rounded-xl text-xs flex items-center justify-center gap-2 font-bold">
-              <AlertCircle className="h-4 w-4 shrink-0" />
+            <div className="mt-4 bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs flex items-center justify-center gap-2 font-bold">
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
               <span>{authError}</span>
             </div>
           )}
 
           <form onSubmit={handleUnlock} className="flex flex-col gap-4 mt-6">
             <div className="relative">
-              <Key className="absolute left-3.5 top-1/2 translate-y-[-50%] h-4.5 w-4.5 text-slate-400" />
+              <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c5a880]" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3.5 text-sm text-slate-800 focus:outline-none focus:border-[#FF6B00] focus:bg-white text-center tracking-wider"
+                placeholder="Enter event password"
+                className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl pl-11 pr-4 py-3.5 text-sm font-semibold text-[#09090b] placeholder:text-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white text-center tracking-wider transition-all"
               />
             </div>
             <button
               type="submit"
-              className="bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold py-3.5 rounded-xl text-xs transition-all shadow-md shadow-orange-500/20"
+              className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-lg"
             >
               Unlock Gallery
             </button>
           </form>
+        </div>
+
+        {/* Footer Note */}
+        <div className="py-4 text-center z-10">
+          <p className="text-[11px] text-slate-400 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
         </div>
       </div>
     );
@@ -428,28 +457,28 @@ export default function EventPhotosPage() {
   const currentLightboxMedia = lightboxIndex !== null ? media[lightboxIndex] : null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 pb-24">
+    <div className="min-h-screen bg-[#faf9f6] text-[#09090b] pb-24 font-poppins selection:bg-[#c5a880] selection:text-[#09090b]">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">
-        <div className="max-w-[1800px] mx-auto px-6 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-[#e3d8c8]/60 shadow-sm">
+        <div className="max-w-[1800px] mx-auto px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {event?.studioId?.logoUrl ? (
-              <img src={event.studioId.logoUrl} alt="Logo" className="h-8 max-w-[120px] object-contain" />
+              <img src={event.studioId.logoUrl} alt="Logo" className="h-8 max-w-[130px] object-contain" />
             ) : (
               <div className="flex items-center gap-2">
-                <div className="bg-[#FF6B00] p-1.5 rounded-lg">
-                  <Camera className="h-4 w-4 text-white" />
+                <div className="bg-[#c5a880] p-1.5 rounded-lg text-[#09090b]">
+                  <Camera className="h-4 w-4 text-[#09090b]" />
                 </div>
-                <span className="text-xs font-extrabold text-[#FF6B00] uppercase tracking-wider">
+                <span className="text-xs font-extrabold text-[#09090b] uppercase tracking-wider">
                   {event?.studioId?.name || 'Gallery'}
                 </span>
               </div>
             )}
-            <span className="h-4 w-px bg-slate-300" />
-            <h1 className="text-sm font-bold text-slate-800">{event?.name}</h1>
+            <span className="h-4 w-px bg-[#e3d8c8]" />
+            <h1 className="text-sm font-extrabold text-[#09090b]">{event?.name}</h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-slate-500 font-bold">
+            <span className="text-xs text-slate-500 font-bold bg-white border border-[#e3d8c8] px-3 py-1.5 rounded-xl">
               {media.length} photos
             </span>
           </div>
@@ -458,31 +487,31 @@ export default function EventPhotosPage() {
 
       {/* Sticky Bottom Action Bar */}
       {fullMedia.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 p-4 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none">
+        <div className="fixed bottom-0 left-0 right-0 z-30 p-4 bg-gradient-to-t from-[#faf9f6] via-[#faf9f6]/90 to-transparent pointer-events-none">
           <div className="max-w-md mx-auto flex gap-3 pointer-events-auto">
             {isFiltered ? (
               <button
                 onClick={clearSearch}
-                className="flex-1 bg-slate-800 hover:bg-slate-900 text-white shadow-xl shadow-slate-900/20 rounded-2xl py-3.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                className="flex-1 bg-[#09090b] hover:bg-slate-900 text-white shadow-xl rounded-2xl py-3.5 px-4 font-bold text-xs flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 text-[#c5a880]" />
                 Clear Search
               </button>
             ) : (
               <button
                 onClick={() => setAiModalOpen(true)}
-                className="flex-1 bg-slate-900 hover:bg-black text-white shadow-xl shadow-slate-900/20 rounded-2xl py-3.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                className="flex-1 bg-[#09090b] hover:bg-black text-white shadow-xl rounded-2xl py-3.5 px-4 font-bold text-xs flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
               >
-                <ScanFace className="h-5 w-5 text-emerald-400" />
+                <ScanFace className="h-4 w-4 text-[#c5a880]" />
                 Find My Photos
               </button>
             )}
 
             <button
               onClick={handleDownloadClick}
-              className="flex-1 bg-[#FF6B00] hover:bg-[#E05E00] text-white shadow-xl shadow-orange-500/20 rounded-2xl py-3.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+              className="flex-1 bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] shadow-xl rounded-2xl py-3.5 px-4 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
             >
-              <Download className="h-5 w-5" />
+              <Download className="h-4 w-4" />
               Download All
             </button>
           </div>

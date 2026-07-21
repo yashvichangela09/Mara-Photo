@@ -432,31 +432,73 @@ export default function ClientGallery() {
   // 1. Password Lock Page
   if (isLocked) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col items-center justify-center p-6 relative">
-        
-        <div className="w-full max-w-md glass-panel bg-white border-slate-200 p-8 rounded-3xl text-center shadow-lg relative z-10">
-          <div className="w-12 h-12 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center mx-auto mb-6">
-            <Lock className="h-5 w-5 text-[#FF6B00]" />
+      <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-between p-6 relative overflow-hidden font-poppins">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
+
+        {/* Top Header */}
+        <div className="w-full max-w-5xl flex items-center justify-between py-4 z-10">
+          <div className="flex items-center gap-3">
+            {event?.studioId?.logoUrl ? (
+              <img src={event.studioId.logoUrl} alt="Studio Logo" className="h-9 max-w-[140px] object-contain" />
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
+                <span className="font-extrabold text-sm tracking-wider text-[#09090b] uppercase">
+                  {event?.studioId?.name || 'Mara Photo'}
+                </span>
+              </div>
+            )}
           </div>
-          <h2 className="text-xl font-bold text-slate-800">{event?.name || 'Private Event'}</h2>
-          <p className="text-xs text-slate-500 font-semibold mt-2">This gallery is password protected. Enter the password below to access the memories.</p>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3 py-1.5 rounded-full border border-[#c5a880]/20">
+            Protected Gallery
+          </span>
+        </div>
+
+        {/* Password Card */}
+        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8] p-8 sm:p-10 rounded-3xl text-center shadow-xl relative z-10 my-auto">
+          <div className="w-14 h-14 rounded-2xl bg-[#c5a880]/15 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-6 text-[#c5a880]">
+            <Lock className="h-6 w-6 text-[#c5a880]" />
+          </div>
+          
+          <span className="text-[10px] font-extrabold tracking-widest text-[#c5a880] uppercase bg-[#f5f2eb] px-3 py-1 rounded-full border border-[#e3d8c8] inline-block mb-3">
+            {event?.type || 'GALLERY'}
+          </span>
+          <h2 className="text-2xl font-extrabold text-[#09090b] tracking-tight">{event?.name || 'Private Event'}</h2>
+          <p className="text-xs text-slate-500 font-semibold mt-2 leading-relaxed">This gallery is password protected. Enter the password below to access the memories.</p>
 
           {authError && (
-            <div className="mt-4 bg-rose-50 border border-rose-100 text-rose-700 p-3 rounded-lg text-xs flex items-center justify-center gap-2 font-semibold">
-              <AlertCircle className="h-4 w-4 shrink-0" />
+            <div className="mt-4 bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs flex items-center justify-center gap-2 font-bold">
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
               <span>{authError}</span>
             </div>
           )}
 
           <form onSubmit={handleUnlock} className="flex flex-col gap-4 mt-6">
             <div className="relative">
-              <Key className="absolute left-3.5 top-1/2 translate-y-[-50%] h-4.5 w-4.5 text-slate-400" />
-              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-800 focus:outline-none focus:border-[#FF6B00] focus:bg-white text-center tracking-wider" />
+              <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c5a880]" />
+              <input 
+                type="password" 
+                required 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                placeholder="Enter event password" 
+                className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl pl-11 pr-4 py-3.5 text-sm font-semibold text-[#09090b] placeholder:text-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white text-center tracking-wider transition-all" 
+              />
             </div>
-            <button type="submit" className="bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold py-3.5 rounded-xl text-xs transition-all shadow-md shadow-orange-500/20">
+            <button 
+              type="submit" 
+              className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-lg"
+            >
               Unlock Gallery
             </button>
           </form>
+        </div>
+
+        {/* Footer Note */}
+        <div className="py-4 text-center z-10">
+          <p className="text-[11px] text-slate-400 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
         </div>
       </div>
     );
@@ -465,62 +507,90 @@ export default function ClientGallery() {
   // 2. Guest Sign-In Page
   if (!isGuest && !isLocked) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col items-center justify-center p-6 relative">
-        <div className="w-full max-w-md glass-panel bg-white border-slate-200 p-8 rounded-3xl text-center shadow-lg relative z-10">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center mx-auto mb-6">
-            <User className="h-5 w-5 text-blue-600" />
+      <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-between p-6 relative overflow-hidden font-poppins">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
+
+        {/* Top Header */}
+        <div className="w-full max-w-5xl flex items-center justify-between py-4 z-10">
+          <div className="flex items-center gap-3">
+            {event?.studioId?.logoUrl ? (
+              <img src={event.studioId.logoUrl} alt="Studio Logo" className="h-9 max-w-[140px] object-contain" />
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
+                <span className="font-extrabold text-sm tracking-wider text-[#09090b] uppercase">
+                  {event?.studioId?.name || 'Mara Photo'}
+                </span>
+              </div>
+            )}
           </div>
-          <h2 className="text-xl font-bold text-slate-800">{event?.name || 'Event Gallery'}</h2>
-          <p className="text-xs text-slate-500 font-semibold mt-2 mb-8">Please enter your details to view the album.</p>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3 py-1.5 rounded-full border border-[#c5a880]/20">
+            Guest Access
+          </span>
+        </div>
+
+        {/* Guest Form Card */}
+        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8] p-8 sm:p-10 rounded-3xl text-center shadow-xl relative z-10 my-auto">
+          <div className="w-14 h-14 rounded-2xl bg-[#c5a880]/15 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-6 text-[#c5a880]">
+            <User className="h-6 w-6 text-[#c5a880]" />
+          </div>
+          
+          <span className="text-[10px] font-extrabold tracking-widest text-[#c5a880] uppercase bg-[#f5f2eb] px-3 py-1 rounded-full border border-[#e3d8c8] inline-block mb-3">
+            {event?.type || 'EVENT'}
+          </span>
+          <h2 className="text-2xl font-extrabold text-[#09090b] tracking-tight">{event?.name || 'Event Gallery'}</h2>
+          <p className="text-xs text-slate-500 font-semibold mt-2 mb-6 leading-relaxed">Please enter your details to view the album.</p>
           
           <form onSubmit={handleGuestSubmit} className="flex flex-col gap-4 text-left">
             <div>
-              <label className="text-[10px] font-bold text-slate-500 mb-1.5 block uppercase tracking-wider">Full Name *</label>
+              <label className="text-[10px] font-extrabold text-slate-600 mb-1.5 block uppercase tracking-wider">Full Name *</label>
               <div className="relative">
                 <input 
                   type="text" 
                   required
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition-all"
+                  className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl px-4 py-3 pl-10 text-sm font-semibold text-[#09090b] placeholder-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white transition-all"
                   placeholder="John Doe"
                 />
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c5a880]" />
               </div>
             </div>
             
             <div>
-              <label className="text-[10px] font-bold text-slate-500 mb-1.5 block uppercase tracking-wider">Phone Number *</label>
+              <label className="text-[10px] font-extrabold text-slate-600 mb-1.5 block uppercase tracking-wider">Phone Number *</label>
               <div className="relative">
                 <input 
                   type="tel" 
                   required
                   value={guestPhone}
                   onChange={(e) => setGuestPhone(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition-all"
+                  className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl px-4 py-3 pl-10 text-sm font-semibold text-[#09090b] placeholder-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white transition-all"
                   placeholder="+91 9876543210"
                 />
-                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c5a880]" />
               </div>
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-slate-500 mb-1.5 block uppercase tracking-wider">Email Address (Optional)</label>
+              <label className="text-[10px] font-extrabold text-slate-600 mb-1.5 block uppercase tracking-wider">Email Address (Optional)</label>
               <div className="relative">
                 <input 
                   type="email" 
                   value={guestEmail}
                   onChange={(e) => setGuestEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition-all"
+                  className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl px-4 py-3 pl-10 text-sm font-semibold text-[#09090b] placeholder-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white transition-all"
                   placeholder="john@example.com"
                 />
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c5a880]" />
               </div>
             </div>
 
             {guestError && (
-              <div className="mt-2 bg-rose-50 border border-rose-100 text-rose-700 p-3 rounded-lg text-xs flex items-center justify-center gap-2 font-semibold">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="mt-2 bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs flex items-center justify-center gap-2 font-bold">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
                 <span>{guestError}</span>
               </div>
             )}
@@ -528,11 +598,16 @@ export default function ClientGallery() {
             <button 
               type="submit" 
               disabled={guestSubmitting}
-              className="mt-4 bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold py-3.5 rounded-xl text-xs transition-all shadow-md shadow-orange-500/20 w-full flex justify-center items-center gap-2"
+              className="mt-4 bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-lg w-full flex justify-center items-center gap-2 disabled:opacity-50"
             >
-              {guestSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enter Gallery'}
+              {guestSubmitting ? <Loader2 className="w-4 h-4 animate-spin text-[#09090b]" /> : 'Enter Gallery'}
             </button>
           </form>
+        </div>
+
+        {/* Footer Note */}
+        <div className="py-4 text-center z-10">
+          <p className="text-[11px] text-slate-400 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
         </div>
       </div>
     );
@@ -541,55 +616,88 @@ export default function ClientGallery() {
   const galleryMedia = searchActive ? matchedMedia : media;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col relative selection:bg-orange-500 selection:text-white">
+    <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col relative font-poppins selection:bg-[#c5a880] selection:text-[#09090b]">
       {/* Whitelabel Header */}
-      <header className="sticky top-0 z-40 glass-panel border-b border-slate-200 bg-white/70 backdrop-blur-md">
+      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-[#e3d8c8]/60 shadow-sm transition-all">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {event?.studioId?.logoUrl ? (
-              <img src={event.studioId.logoUrl} alt="Logo" className="h-8 max-w-[120px] object-contain" />
+              <img src={event.studioId.logoUrl} alt="Logo" className="h-9 max-w-[150px] object-contain" />
             ) : (
-              <span className="font-extrabold text-sm tracking-widest text-[#FF6B00] uppercase">
-                {event?.studioId?.name}
-              </span>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
+                <span className="font-extrabold text-sm tracking-widest text-[#09090b] uppercase">
+                  {event?.studioId?.name || 'Mara Photo'}
+                </span>
+              </div>
             )}
           </div>
           
-          <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
-            <span>{event?.name}</span>
-            <span className="h-4 w-[1px] bg-slate-200" />
-            <span>{new Date(event?.date).toLocaleDateString()}</span>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-block text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3.5 py-1.5 rounded-full border border-[#c5a880]/20">
+              {event?.name}
+            </span>
+            {event?.date && (
+              <span className="text-xs font-bold text-slate-600 bg-white border border-[#e3d8c8] px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
+                <CalendarDays className="h-3.5 w-3.5 text-[#c5a880]" />
+                {new Date(event.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+              </span>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Hero Banner Cover */}
-      <div className="h-72 w-full relative overflow-hidden">
+      {/* Unique Luxury Hero Presentation */}
+      <div className="relative w-full bg-[#09090b] text-white py-16 px-6 overflow-hidden">
         {event?.coverImageUrl ? (
-          <img src={event.coverImageUrl} alt="Cover" className="w-full h-full object-cover brightness-50" />
+          <img src={event.coverImageUrl} alt="Cover" className="absolute inset-0 w-full h-full object-cover opacity-35 scale-105 filter blur-[2px]" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-[#000053] via-slate-900 to-slate-950 brightness-75" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-[#1a1714] to-[#09090b] opacity-90" />
         )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#F8FAFC] to-transparent h-48" />
-        <div className="absolute inset-0 flex flex-col justify-end p-8 max-w-7xl mx-auto">
-          <span className="text-[10px] uppercase font-bold tracking-widest bg-[#FF6B00] text-white px-2.5 py-1 rounded-full w-max shadow-md mb-3">
-            {event?.type}
-          </span>
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-800">{event?.name}</h1>
-          <p className="text-xs text-slate-500 font-semibold mt-2 flex items-center gap-1.5">
-            <CalendarDays className="h-4 w-4 text-[#FF6B00]" />
-            {event?.location || 'Studio Photography Session'}
-          </p>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/50 to-transparent" />
+
+        <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-start gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] uppercase font-black tracking-widest bg-[#c5a880] text-[#09090b] px-3 py-1 rounded-full shadow-md">
+              {event?.type || 'EVENT GALLERY'}
+            </span>
+            {event?.clientName && (
+              <span className="text-[10px] uppercase font-bold tracking-wider bg-white/10 backdrop-blur-md text-white/90 px-3 py-1 rounded-full border border-white/15">
+                Client: {event.clientName}
+              </span>
+            )}
+          </div>
+
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white drop-shadow-md">
+            {event?.name}
+          </h1>
+
+          <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-300 mt-1">
+            {event?.date && (
+              <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10">
+                <CalendarDays className="h-4 w-4 text-[#c5a880]" />
+                <span>{new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              </div>
+            )}
+            {event?.location && (
+              <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10">
+                <MapPin className="h-4 w-4 text-[#c5a880]" />
+                <span>{event.location}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10">
+              <ImageIcon className="h-4 w-4 text-[#c5a880]" />
+              <span>{media.length} Media Files</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Gallery Controls bar */}
-      <div className="max-w-7xl mx-auto w-full px-6 py-6 flex items-center justify-between border-b border-slate-200">
+      <div className="max-w-7xl mx-auto w-full px-6 py-6 flex items-center justify-between border-b border-[#e3d8c8]/50">
         <div className="flex items-center gap-3">
-
-
           {searchActive && searchStats && (
-            <span className="text-xs text-slate-400 font-semibold ml-4">
+            <span className="text-xs text-slate-500 font-bold ml-2">
               Scanned {searchStats.totalSearched} face(s) in album
             </span>
           )}
@@ -597,7 +705,7 @@ export default function ClientGallery() {
 
         <div className="flex items-center gap-4">
           {searchActive && (
-            <button onClick={clearSearch} className="text-xs text-rose-600 hover:text-rose-500 font-bold underline flex items-center gap-1">
+            <button onClick={clearSearch} className="text-xs text-rose-600 hover:text-rose-700 font-bold underline flex items-center gap-1">
               <X className="h-3.5 w-3.5" />
               Clear AI Results
             </button>
@@ -605,17 +713,18 @@ export default function ClientGallery() {
 
           {isMultiSelect ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-500 font-bold">Selected: <strong>{selectedMediaIds.length}</strong></span>
-              <button onClick={handleBulkDownload} disabled={selectedMediaIds.length === 0} className="bg-[#FF6B00] hover:bg-[#E05E00] text-white text-xs font-bold px-4 py-2 rounded-lg disabled:opacity-50 flex items-center gap-1.5 transition-colors shadow-sm">
+              <span className="text-xs text-slate-600 font-bold">Selected: <strong>{selectedMediaIds.length}</strong></span>
+              <button onClick={handleBulkDownload} disabled={selectedMediaIds.length === 0} className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] text-xs font-extrabold px-4 py-2 rounded-xl disabled:opacity-50 flex items-center gap-1.5 transition-colors shadow-sm">
                 <Download className="h-3.5 w-3.5" />
                 Download Selected
               </button>
-              <button onClick={() => { setIsMultiSelect(false); setSelectedMediaIds([]); }} className="text-xs text-slate-500 hover:text-slate-700">
+              <button onClick={() => { setIsMultiSelect(false); setSelectedMediaIds([]); }} className="text-xs text-slate-500 hover:text-slate-700 font-bold">
                 Cancel
               </button>
             </div>
           ) : (
-            <button onClick={() => setIsMultiSelect(true)} className="text-xs text-slate-500 hover:text-slate-800 border border-slate-200 bg-white rounded-lg px-3.5 py-2 hover:bg-slate-50 transition-colors shadow-sm font-semibold">
+            <button onClick={() => setIsMultiSelect(true)} className="text-xs text-[#09090b] hover:text-[#c5a880] border border-[#e3d8c8] bg-white rounded-xl px-4 py-2.5 hover:bg-[#faf9f6] transition-colors shadow-sm font-bold flex items-center gap-2">
+              <Check className="h-3.5 w-3.5 text-[#c5a880]" />
               Select Multiple
             </button>
           )}
@@ -829,14 +938,37 @@ export default function ClientGallery() {
       >
         <div className="relative">
           {/* Pulse ring */}
-          <div className="absolute inset-0 bg-orange-500 rounded-2xl animate-ping opacity-20" />
-          <div className="relative bg-gradient-to-r from-[#FF6B00] via-[#FF9100] to-[#FF8000] hover:from-[#E05E00] hover:via-[#FF8000] hover:to-[#FF6B00] text-white font-bold px-6 py-4 rounded-2xl shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/45 transform hover:-translate-y-0.5 transition-all flex items-center gap-2.5">
-            <ScanFace className="h-5 w-5" />
-            <span className="text-sm">Find My Photos</span>
+          <div className="absolute inset-0 bg-[#c5a880] rounded-2xl animate-ping opacity-25" />
+          <div className="relative bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black px-6 py-4 rounded-2xl shadow-2xl transform hover:-translate-y-0.5 transition-all flex items-center gap-2.5 border border-[#e3d8c8]">
+            <ScanFace className="h-5 w-5 text-[#09090b]" />
+            <span className="text-sm uppercase tracking-wider">Find My Photos</span>
             <ChevronRight className="h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition-transform" />
           </div>
         </div>
       </button>
+
+      {/* Footer */}
+      <footer className="mt-16 bg-[#09090b] text-white border-t border-white/10 py-10 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
+          <div className="flex items-center gap-3">
+            {event?.studioId?.logoUrl ? (
+              <img src={event.studioId.logoUrl} alt="Logo" className="h-8 max-w-[130px] object-contain brightness-125" />
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-md bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
+                <span className="font-extrabold text-sm tracking-wider text-white uppercase">
+                  {event?.studioId?.name || 'Mara Photo Studio'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="text-xs text-slate-400 font-medium flex items-center gap-1">
+            <span>Delivered with passion via</span>
+            <span className="text-[#c5a880] font-bold">Mara Photo AI Gallery</span>
+          </div>
+        </div>
+      </footer>
 
       {/* ── Professional Selfie Search Modal ── */}
       {searchModalOpen && (
@@ -844,7 +976,7 @@ export default function ClientGallery() {
           <div className="w-full max-w-lg bg-white p-0 rounded-3xl relative shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             
             {/* Modal Header */}
-            <div className="relative bg-gradient-to-r from-[#FF6B00] via-[#FF9100] to-[#FF8000] p-6 pb-8">
+            <div className="relative bg-[#09090b] text-white p-6 pb-8 border-b border-white/10">
               <button 
                 onClick={closeSearchModal} 
                 className="absolute top-4 right-4 text-white/60 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
@@ -853,12 +985,12 @@ export default function ClientGallery() {
               </button>
               
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center">
-                  <ScanFace className="h-6 w-6 text-white" />
+                <div className="w-11 h-11 rounded-xl bg-[#c5a880] flex items-center justify-center text-[#09090b]">
+                  <ScanFace className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Find My Photos</h3>
-                  <p className="text-xs text-orange-100 font-medium mt-0.5">Upload a photo or scan your face to find all photos you appear in</p>
+                  <h3 className="text-lg font-extrabold text-white">Find My Photos</h3>
+                  <p className="text-xs text-slate-300 font-medium mt-0.5">Upload a photo or scan your face to find all photos you appear in</p>
                 </div>
               </div>
             </div>
@@ -915,7 +1047,7 @@ export default function ClientGallery() {
                   </div>
                   <button 
                     onClick={capturePhoto} 
-                    className="w-full bg-gradient-to-r from-[#FF6B00] to-[#FF9100] hover:from-[#E05E00] hover:to-[#FF8000] text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-md shadow-orange-500/20 flex items-center justify-center gap-2"
+                    className="w-full bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black py-3.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2"
                   >
                     <Camera className="h-4.5 w-4.5" />
                     Capture Photo
@@ -945,7 +1077,7 @@ export default function ClientGallery() {
                       <div className="w-full space-y-3">
                         <button 
                           onClick={() => fileInputRef.current?.click()} 
-                          className="w-full text-xs text-[#FF6B00] hover:text-[#FF6B00] font-bold py-2 flex items-center justify-center gap-1.5"
+                          className="w-full text-xs text-[#c5a880] hover:text-[#b59a72] font-bold py-2 flex items-center justify-center gap-1.5"
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
                           Remove & choose another
@@ -955,12 +1087,12 @@ export default function ClientGallery() {
                         <button 
                           onClick={handleAISearch} 
                           disabled={searchLoading} 
-                          className="relative w-full bg-gradient-to-r from-[#FF6B00] to-[#FF9100] hover:from-[#E05E00] hover:to-[#FF8000] disabled:from-orange-300 disabled:to-orange-450 text-white font-bold py-4 rounded-xl text-sm transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2.5 overflow-hidden"
+                          className="relative w-full bg-[#c5a880] hover:bg-[#b59a72] disabled:opacity-50 text-[#09090b] font-black py-4 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2.5 overflow-hidden"
                         >
                           {/* Progress bar inside button */}
                           {searchLoading && (
                             <div 
-                              className="absolute inset-y-0 left-0 bg-white/15 transition-all duration-300 ease-out"
+                              className="absolute inset-y-0 left-0 bg-[#09090b]/15 transition-all duration-300 ease-out"
                               style={{ width: `${searchProgress}%` }}
                             />
                           )}
@@ -989,12 +1121,12 @@ export default function ClientGallery() {
                       onClick={() => fileInputRef.current?.click()}
                       className={`w-full aspect-[4/3] rounded-2xl border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center gap-3 ${
                         isDragOver 
-                          ? 'border-[#FF6B00] bg-orange-50' 
-                          : 'border-slate-200 bg-slate-50 hover:border-[#FF6B00] hover:bg-orange-50/50'
+                          ? 'border-[#c5a880] bg-[#f5f2eb]' 
+                          : 'border-slate-200 bg-slate-50 hover:border-[#c5a880] hover:bg-[#faf9f6]'
                       }`}
                     >
-                      <div className="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center">
-                        <Upload className="h-6 w-6 text-[#FF6B00]" />
+                      <div className="w-14 h-14 rounded-2xl bg-[#c5a880]/15 flex items-center justify-center">
+                        <Upload className="h-6 w-6 text-[#c5a880]" />
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-bold text-slate-700">
