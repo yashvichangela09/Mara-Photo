@@ -1,0 +1,8 @@
+node_modules
+dist
+mongodb_data
+uploads
+.env
+.git
+.github
+temp_*

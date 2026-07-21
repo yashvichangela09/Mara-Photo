@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./datepicker-custom.css";
 import { AuthProvider } from "../lib/AuthContext";
 import PageLoader from "../components/PageLoader";
 import NavigationProgress from "../components/NavigationProgress";

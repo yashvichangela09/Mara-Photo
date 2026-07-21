@@ -60,6 +60,14 @@ export default function ClientGallery() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
+  // Guest Sign-In States
+  const [isGuest, setIsGuest] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+  const [guestError, setGuestError] = useState('');
+  const [guestSubmitting, setGuestSubmitting] = useState(false);
+
   // Gallery view configurations
   const [viewType, setViewType] = useState<'grid' | 'masonry' | 'timeline'>('masonry');
   
@@ -138,6 +146,12 @@ export default function ClientGallery() {
   };
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const guestStatus = localStorage.getItem(`mara_guest_${slug}`);
+      if (guestStatus === 'true') {
+        setIsGuest(true);
+      }
+    }
     fetchEventData();
   }, [slug]);
 
@@ -182,6 +196,34 @@ export default function ClientGallery() {
       fetchGalleryMedia(event._id);
     } catch (err: any) {
       setAuthError('Incorrect gallery password.');
+    }
+  };
+
+  const handleGuestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGuestError('');
+    setGuestSubmitting(true);
+    
+    if (!guestName.trim() || !guestPhone.trim()) {
+      setGuestError('Name and Phone are required.');
+      setGuestSubmitting(false);
+      return;
+    }
+
+    try {
+      await apiClient.post(`/visitors/event/code/${slug}`, {
+        name: guestName,
+        phone: guestPhone,
+        email: guestEmail
+      });
+      
+      localStorage.setItem(`mara_guest_${slug}`, 'true');
+      setIsGuest(true);
+    } catch (err: any) {
+      console.error(err);
+      setGuestError(err.response?.data?.error || 'Failed to submit details. Please try again.');
+    } finally {
+      setGuestSubmitting(false);
     }
   };
 
@@ -409,10 +451,86 @@ export default function ClientGallery() {
           <form onSubmit={handleUnlock} className="flex flex-col gap-4 mt-6">
             <div className="relative">
               <Key className="absolute left-3.5 top-1/2 translate-y-[-50%] h-4.5 w-4.5 text-slate-400" />
-              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-800 focus:outline-none focus:border-[#FF6B00] focus:bg-white text-center tracking-wider" />
+              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-800 focus:outline-none focus:border-[#FF6B00] focus:bg-white text-center tracking-wider" />
             </div>
             <button type="submit" className="bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold py-3.5 rounded-xl text-xs transition-all shadow-md shadow-orange-500/20">
               Unlock Gallery
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Guest Sign-In Page
+  if (!isGuest && !isLocked) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col items-center justify-center p-6 relative">
+        <div className="w-full max-w-md glass-panel bg-white border-slate-200 p-8 rounded-3xl text-center shadow-lg relative z-10">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center mx-auto mb-6">
+            <User className="h-5 w-5 text-blue-600" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800">{event?.name || 'Event Gallery'}</h2>
+          <p className="text-xs text-slate-500 font-semibold mt-2 mb-8">Please enter your details to view the album.</p>
+          
+          <form onSubmit={handleGuestSubmit} className="flex flex-col gap-4 text-left">
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 mb-1.5 block uppercase tracking-wider">Full Name *</label>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  required
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition-all"
+                  placeholder="John Doe"
+                />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 mb-1.5 block uppercase tracking-wider">Phone Number *</label>
+              <div className="relative">
+                <input 
+                  type="tel" 
+                  required
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition-all"
+                  placeholder="+91 9876543210"
+                />
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-500 mb-1.5 block uppercase tracking-wider">Email Address (Optional)</label>
+              <div className="relative">
+                <input 
+                  type="email" 
+                  value={guestEmail}
+                  onChange={(e) => setGuestEmail(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition-all"
+                  placeholder="john@example.com"
+                />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              </div>
+            </div>
+
+            {guestError && (
+              <div className="mt-2 bg-rose-50 border border-rose-100 text-rose-700 p-3 rounded-lg text-xs flex items-center justify-center gap-2 font-semibold">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{guestError}</span>
+              </div>
+            )}
+            
+            <button 
+              type="submit" 
+              disabled={guestSubmitting}
+              className="mt-4 bg-[#FF6B00] hover:bg-[#E05E00] text-white font-bold py-3.5 rounded-xl text-xs transition-all shadow-md shadow-orange-500/20 w-full flex justify-center items-center gap-2"
+            >
+              {guestSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enter Gallery'}
             </button>
           </form>
         </div>
