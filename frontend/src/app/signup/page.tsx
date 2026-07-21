@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Loader, ArrowRight, Upload, Mail, Lock, User as UserIcon, Phone, Store, Check, X, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader, Loader2, ArrowRight, Upload, Mail, Lock, User as UserIcon, Phone, Store, Check, X, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
 import { apiClient } from '../../lib/api';
 import PublicWrapper from '../../components/PublicWrapper';

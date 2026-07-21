@@ -488,7 +488,14 @@ export default function LoginPage() {
             </div>
 
             <button id="login-submit" type="submit" disabled={loading} className="login-btn">
-              {loading ? <Loader className="w-4 h-4 animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
+              {loading ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>Sign In <ArrowRight className="w-4 h-4" /></>
+              )}
             </button>
           </form>
 
