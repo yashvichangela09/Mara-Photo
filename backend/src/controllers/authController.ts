@@ -190,7 +190,12 @@ export const googleLogin = async (req: Request, res: Response) => {
       
       // If new user, create a placeholder studio
       if (!studio) {
-        const cleanSubdomain = name.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + Math.floor(Math.random() * 10000);
+        let cleanSubdomain = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!cleanSubdomain) {
+          cleanSubdomain = 'studio';
+        }
+        cleanSubdomain += '-' + Math.floor(Math.random() * 900000 + 100000);
+
         studio = await Studio.create({
           name: name + "'s Studio",
           subdomain: cleanSubdomain,
