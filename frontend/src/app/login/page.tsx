@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const { login, googleLogin, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -66,18 +67,14 @@ export default function LoginPage() {
   const handleGoogleSuccess = async (credentialResponse: any) => {
     if (!credentialResponse.credential) return;
     try {
-      setLoading(true);
-      if (googleLogin) {
-        await googleLogin(credentialResponse.credential);
-        toast.success('Google login successful!');
-        router.push('/dashboard');
-      } else {
-         toast.error("Google login method not implemented in AuthContext.");
-      }
+      setGoogleLoading(true);
+      await googleLogin(credentialResponse.credential);
+      toast.success('Google login successful!');
+      router.push('/dashboard');
     } catch (err: any) {
       toast.error(err?.response?.data?.error || 'Google login failed.');
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
@@ -501,6 +498,16 @@ export default function LoginPage() {
 
           <div className="auth-divider" style={{ marginTop: '24px' }}>or continue with Google</div>
           
+          {googleLoading ? (
+            <div style={{
+              width: '100%', padding: '16px', background: '#fff', border: '1.5px solid #c5a880',
+              borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: '10px', fontWeight: 700, fontSize: '13px', color: '#64748b'
+            }}>
+              <Loader className="w-4 h-4" style={{ animation: 'spin 1s linear infinite', color: '#c5a880' }} />
+              <span>Signing in with Google...</span>
+            </div>
+          ) : (
           <div className="google-auth-wrapper">
              <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'dummy-client-id'}>
                <GoogleLogin
@@ -523,6 +530,7 @@ export default function LoginPage() {
                Continue with Google
              </div>
           </div>
+          )}
 
           <div className="login-footer">
             Don&apos;t have an account? <Link href="/signup">Create Account</Link>

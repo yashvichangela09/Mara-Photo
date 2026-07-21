@@ -25,6 +25,7 @@ interface AuthContextType {
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  googleLogin: (credential: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -126,8 +127,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setStudio(null);
   };
 
+  const googleLogin = async (credential: string) => {
+    const res = await apiClient.post('/auth/google', { credential });
+    const data = res.data;
+
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    if (data.studio) {
+      localStorage.setItem('studio', JSON.stringify(data.studio));
+    }
+
+    setUser(data.user);
+    setStudio(data.studio || null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, studio, isAuthenticated, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, studio, isAuthenticated, loading, login, register, logout, refreshUser, googleLogin }}>
       {children}
     </AuthContext.Provider>
   );
