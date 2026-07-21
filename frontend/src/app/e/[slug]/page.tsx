@@ -70,6 +70,7 @@ export default function ClientGallery() {
 
   // Gallery view configurations
   const [viewType, setViewType] = useState<'grid' | 'masonry' | 'timeline'>('masonry');
+  const [mediaFilter, setMediaFilter] = useState<'ALL' | 'PHOTO' | 'VIDEO'>('ALL');
   
   // Selfie Search Modal
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -639,7 +640,11 @@ export default function ClientGallery() {
     );
   }
 
-  const galleryMedia = searchActive ? matchedMedia : media;
+  const galleryMedia = (searchActive ? matchedMedia : media).filter(m => {
+    if (mediaFilter === 'PHOTO') return m.type === 'PHOTO' || !m.type;
+    if (mediaFilter === 'VIDEO') return m.type === 'VIDEO';
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col relative font-poppins selection:bg-[#c5a880] selection:text-[#09090b]">
@@ -1033,16 +1038,16 @@ export default function ClientGallery() {
           </div>
 
           <div className="flex flex-wrap items-center gap-6 text-xs text-slate-300 font-medium">
-            {event?.studioId?.ownerId?.email && (
-              <a href={`mailto:${event.studioId.ownerId.email}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-colors">
+            {typeof event?.studioId === 'object' && event?.studioId?.ownerId && typeof event.studioId.ownerId === 'object' && (event.studioId.ownerId as any).email && (
+              <a href={`mailto:${(event.studioId.ownerId as any).email}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-colors">
                 <Mail className="h-4 w-4 text-[#c5a880]" />
-                <span>{event.studioId.ownerId.email}</span>
+                <span>{(event.studioId.ownerId as any).email}</span>
               </a>
             )}
-            {event?.studioId?.ownerId?.phone && (
-              <a href={`tel:${event.studioId.ownerId.phone}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-colors">
+            {typeof event?.studioId === 'object' && event?.studioId?.ownerId && typeof event.studioId.ownerId === 'object' && (event.studioId.ownerId as any).phone && (
+              <a href={`tel:${(event.studioId.ownerId as any).phone}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-colors">
                 <Phone className="h-4 w-4 text-[#c5a880]" />
-                <span>{event.studioId.ownerId.phone}</span>
+                <span>{(event.studioId.ownerId as any).phone}</span>
               </a>
             )}
             {event?.location && (
