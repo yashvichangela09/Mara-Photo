@@ -51,7 +51,8 @@ export default function CalendarPage() {
     photographersNames: [''] as string[],
     videographersNames: [] as string[],
     location: '',
-    notes: ''
+    notes: '',
+    reminderHours: 0
   });
 
   // Calendar calculations
@@ -107,7 +108,8 @@ export default function CalendarPage() {
         photographersNames: [],
         videographersNames: [],
         location: '',
-        notes: ''
+        notes: '',
+        reminderHours: 0
       });
       setShowForm(true);
     }
@@ -157,7 +159,8 @@ export default function CalendarPage() {
         photographersNames: formData.photographersNames.filter(n => n.trim()),
         videographersNames: workType === 'Other' ? [] : formData.videographersNames.filter(n => n.trim()),
         location: formData.location,
-        notes: formData.notes
+        notes: formData.notes,
+        reminderHours: Number(formData.reminderHours) || 0
       };
 
       const res = await apiClient.post('/dashboard/shoots', payload);
@@ -485,6 +488,14 @@ export default function CalendarPage() {
                         <label className="form-label">Notes (Optional)</label>
                         <textarea className="form-input" rows={2}  value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
                       </div>
+                      <div>
+                        <label className="form-label">Reminder Notification</label>
+                        <select className="form-input" value={formData.reminderHours} onChange={e => setFormData({ ...formData, reminderHours: Number(e.target.value) })}>
+                          <option value={0}>No Reminder</option>
+                          <option value={12}>12 Hours Before</option>
+                          <option value={24}>24 Hours Before</option>
+                        </select>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -584,6 +595,14 @@ export default function CalendarPage() {
                       <div>
                         <label className="form-label">Notes (Optional)</label>
                         <textarea className="form-input" rows={2}  value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="form-label">Reminder Notification</label>
+                        <select className="form-input" value={formData.reminderHours} onChange={e => setFormData({ ...formData, reminderHours: Number(e.target.value) })}>
+                          <option value={0}>No Reminder</option>
+                          <option value={12}>12 Hours Before</option>
+                          <option value={24}>24 Hours Before</option>
+                        </select>
                       </div>
                     </div>
                   )}
@@ -733,6 +752,13 @@ export default function CalendarPage() {
                   <p className="text-sm text-slate-400 bg-[#f8f7f4] text-slate-900 p-3 rounded-xl border border-slate-100 whitespace-pre-wrap leading-relaxed">
                     {viewingShoot.notes}
                   </p>
+                </div>
+              )}
+
+              {viewingShoot.reminderHours > 0 && (
+                <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="text-xs font-bold text-slate-550">Reminder set for {viewingShoot.reminderHours} hours before event</span>
                 </div>
               )}
             </div>

@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useDashboard } from './DashboardContext';
-import { Calendar, Image as ImageIcon, RefreshCw, TrendingUp, Zap } from 'lucide-react';
+import { Calendar, Image as ImageIcon, RefreshCw, TrendingUp, Zap, Bell, AlertTriangle } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 
 interface Stats {
@@ -57,6 +57,24 @@ export default function DashboardOverview() {
       setRefreshing(false);
     }
   }, []);
+
+  const getReminders = () => {
+    if (!context.shoots) return [];
+    const now = new Date();
+    return context.shoots.filter((shoot: any) => {
+      if (!shoot.reminderHours || shoot.reminderHours <= 0) return false;
+      const shootDate = new Date(shoot.date);
+      if (shoot.time) {
+        const [h, m] = shoot.time.split(':');
+        shootDate.setHours(parseInt(h) || 0, parseInt(m) || 0, 0, 0);
+      }
+      const diffMs = shootDate.getTime() - now.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+      return diffHours > 0 && diffHours <= shoot.reminderHours;
+    });
+  };
+
+  const activeReminders = getReminders();
 
   // Initial fetch
   useEffect(() => {
@@ -125,6 +143,30 @@ export default function DashboardOverview() {
             Refresh
           </button>
         </div>
+
+        {/* Active Reminders Alert Banners */}
+        {activeReminders.length > 0 && (
+          <div className="space-y-3">
+            {activeReminders.map((shoot: any) => (
+              <div key={shoot._id} className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-250 p-4 rounded-xl flex items-start gap-3.5 shadow-sm">
+                <div className="w-9 h-9 rounded-xl bg-amber-550 flex items-center justify-center text-white shrink-0 mt-0.5 shadow-sm">
+                  <Bell className="h-5 w-5" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h4 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">
+                    Upcoming Shoot Reminder: {shoot.eventName}
+                  </h4>
+                  <p className="text-xs text-slate-500 font-semibold mt-1">
+                    Scheduled on <strong>{new Date(shoot.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</strong> at <strong>{shoot.time}</strong> at <strong>{shoot.location || 'Not Specified'}</strong>.
+                  </p>
+                </div>
+                <span className="text-[10px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-2 py-1 rounded-full uppercase tracking-wider">
+                  Starts in &lt; {shoot.reminderHours}h
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Stats Cards — Events & Photos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

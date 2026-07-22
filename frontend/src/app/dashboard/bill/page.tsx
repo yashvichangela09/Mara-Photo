@@ -389,7 +389,7 @@ export default function BillPage() {
                       <tr className="border-b border-slate-200 bg-white/[0.03] text-slate-350 uppercase tracking-wider font-black">
                         <th className="p-4 text-center">Invoice ID</th>
                         <th className="p-4 text-center">Billed Client</th>
-                        <th className="p-4 text-center">Issue Date</th>
+                        <th className="p-4 text-center">Token Date</th>
                         <th className="p-4 text-center">Total Amount</th>
                         <th className="p-4 text-slate-900 text-center">Token Paid</th>
                         <th className="p-4 text-rose-450 text-center">Balance Left</th>
