@@ -613,6 +613,9 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
+                  <p className="text-[10px] text-slate-500 font-bold mt-2 uppercase tracking-widest">
+                    Type a new password above to change password
+                  </p>
                 </div>
               )}
 

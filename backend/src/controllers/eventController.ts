@@ -199,10 +199,14 @@ export const getEventByCode = async (req: Request, res: Response) => {
       const token = authHeader.split(' ')[1];
       try {
         const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
-        const populatedOwnerId = (event.studioId as any)?.ownerId?._id || (event.studioId as any)?.ownerId;
-        if (decoded.role === 'SUPER_ADMIN' || 
-            (decoded.userId && populatedOwnerId && populatedOwnerId.toString() === decoded.userId.toString())) {
+        if (decoded.role === 'SUPER_ADMIN') {
           isOwnerOrStaff = true;
+        } else if (decoded.userId) {
+          const userStudio = await Studio.findOne({ ownerId: decoded.userId });
+          const eventStudioId = (event.studioId as any)?._id || event.studioId;
+          if (userStudio && eventStudioId && userStudio._id.toString() === eventStudioId.toString()) {
+            isOwnerOrStaff = true;
+          }
         }
       } catch (e) {
         // Treat as public visitor
