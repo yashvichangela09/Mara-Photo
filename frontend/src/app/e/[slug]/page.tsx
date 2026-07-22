@@ -1002,6 +1002,22 @@ export default function ClientGallery() {
         )}
       </div>
 
+      {/* ── Floating Action Button ── */}
+      <button 
+        onClick={() => setSearchModalOpen(true)} 
+        className="fixed bottom-8 right-8 z-35 group"
+      >
+        <div className="relative">
+          {/* Pulse ring */}
+          <div className="absolute inset-0 bg-[#c5a880] rounded-2xl animate-ping opacity-25" />
+          <div className="relative bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black px-6 py-4 rounded-2xl shadow-2xl transform hover:-translate-y-0.5 transition-all flex items-center gap-2.5 border border-[#e3d8c8]">
+            <ScanFace className="h-5 w-5 text-[#09090b]" />
+            <span className="text-sm uppercase tracking-wider">Find My Photos</span>
+            <ChevronRight className="h-4 w-4 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </div>
+      </button>
+
       {/* Rich Contact Footer */}
       <footer className="mt-20 bg-[#09090b] text-white border-t border-white/10 py-14 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
