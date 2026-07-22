@@ -2,7 +2,7 @@
 import React, { useState, useEffect, use, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, Settings, Sliders, Camera, Trash2, Loader2, Check, Copy, Eye, EyeOff, X } from 'lucide-react';
+import { ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, Settings, Sliders, Camera, Trash2, Loader2, Check, Copy, Eye, EyeOff, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import toast from 'react-hot-toast';
 import CustomDatePicker from '../../../../components/CustomDatePicker';
@@ -902,51 +902,74 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* Lightbox / Modal for preview & delete */}
-      {selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-6">
-          {/* Header */}
-          <div className="flex justify-between items-center w-full z-10">
-            <span className="text-white text-xs font-black uppercase tracking-widest bg-white/10 px-3 py-1.5 rounded-full border border-white/10">
-              {selectedItem.type || 'PHOTO'}
-            </span>
-            <button 
-              onClick={() => setSelectedItem(null)}
-              className="p-2 bg-white/10 text-white hover:bg-white/20 rounded-xl transition-all border border-white/10"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+      {selectedItem && (() => {
+        const selectedIndex = mediaItems.findIndex(m => m._id === selectedItem._id);
+        return (
+          <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-6">
+            {/* Header */}
+            <div className="flex justify-between items-center w-full z-10">
+              <span className="text-white text-xs font-black uppercase tracking-widest bg-white/10 px-3 py-1.5 rounded-full border border-white/10">
+                {selectedItem.type || 'PHOTO'}
+              </span>
+              <button 
+                onClick={() => setSelectedItem(null)}
+                className="p-2 bg-white/10 text-white hover:bg-white/20 rounded-xl transition-all border border-white/10"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-          {/* Media Container */}
-          <div className="flex-1 flex items-center justify-center max-h-[75vh] w-full my-4 relative">
-            {selectedItem.type === 'VIDEO' ? (
-              <video 
-                src={selectedItem.url || selectedItem.r2Url} 
-                controls 
-                autoPlay 
-                className="max-h-full max-w-full rounded-2xl shadow-2xl"
-              />
-            ) : (
-              <img 
-                src={selectedItem.url || selectedItem.r2Url} 
-                alt="Zoom Preview" 
-                className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl border border-white/5 bg-slate-900"
-              />
+            {/* Left navigation arrow */}
+            {selectedIndex > 0 && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); setSelectedItem(mediaItems[selectedIndex - 1]); }} 
+                className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10 z-20 cursor-pointer"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
             )}
-          </div>
 
-          {/* Actions Footer */}
-          <div className="flex justify-center items-center gap-4 w-full z-10 pb-4">
-            <button 
-              onClick={() => handleDeleteMedia(selectedItem._id)}
-              className="px-6 py-3.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all"
-            >
-              <Trash2 className="h-4.5 w-4.5" />
-              Delete File
-            </button>
+            {/* Media Container */}
+            <div className="flex-1 flex items-center justify-center max-h-[75vh] w-full my-4 relative">
+              {selectedItem.type === 'VIDEO' ? (
+                <video 
+                  src={selectedItem.url || selectedItem.r2Url} 
+                  controls 
+                  autoPlay 
+                  className="max-h-full max-w-full rounded-2xl shadow-2xl"
+                />
+              ) : (
+                <img 
+                  src={selectedItem.url || selectedItem.r2Url} 
+                  alt="Zoom Preview" 
+                  className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl border border-white/5 bg-slate-900"
+                />
+              )}
+            </div>
+
+            {/* Right navigation arrow */}
+            {selectedIndex < mediaItems.length - 1 && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); setSelectedItem(mediaItems[selectedIndex + 1]); }} 
+                className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10 z-20 cursor-pointer"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            )}
+
+            {/* Actions Footer */}
+            <div className="flex justify-center items-center gap-4 w-full z-10 pb-4">
+              <button 
+                onClick={() => handleDeleteMedia(selectedItem._id)}
+                className="px-6 py-3.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all"
+              >
+                <Trash2 className="h-4.5 w-4.5" />
+                Delete File
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       {/* Upload settings modal */}
       {isUploadModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#09090b]/85 backdrop-blur-sm flex items-center justify-center p-4">
