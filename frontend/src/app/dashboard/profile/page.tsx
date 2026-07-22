@@ -19,6 +19,8 @@ export default function ProfilePage() {
   const [mobile, setMobile] = useState('');
   const [studioName, setStudioName] = useState('');
   const [websiteLink, setWebsiteLink] = useState('');
+  const [instagramLink, setInstagramLink] = useState('');
+  const [facebookLink, setFacebookLink] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -34,6 +36,8 @@ export default function ProfilePage() {
       setStudioName(studio.name || '');
       setWebsiteLink(studio.customDomain || studio.websiteLink || '');
       setLogoUrl(studio.logoUrl || '');
+      setInstagramLink(studio.instagramUrl || '');
+      setFacebookLink(studio.facebookUrl || '');
     }
   }, [sessionUser, studio]);
 
@@ -80,6 +84,8 @@ export default function ProfilePage() {
         name: studioName,
         logoUrl: logoUrl,
         customDomain: websiteLink,
+        instagramUrl: instagramLink,
+        facebookUrl: facebookLink,
         userName: name,
         userPhone: mobile
       });
@@ -90,7 +96,9 @@ export default function ProfilePage() {
           ...prev,
           name: studioName,
           logoUrl: logoUrl,
-          customDomain: websiteLink
+          customDomain: websiteLink,
+          instagramUrl: instagramLink,
+          facebookUrl: facebookLink
         }));
       }
 
@@ -208,6 +216,36 @@ export default function ProfilePage() {
               value={websiteLink} 
               onChange={(e) => setWebsiteLink(e.target.value)}
               
+              className="w-full bg-white disabled:bg-[#f8f7f4] text-slate-900 disabled:text-slate-500 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#c5a880]" 
+            />
+          </div>
+
+          {/* Instagram Profile Link (Optional) */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] text-slate-450 font-bold uppercase tracking-wider flex items-center gap-1">
+              Instagram Profile Link <span className="text-[9px] text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <input 
+              type="url" 
+              disabled={!isEditing}
+              value={instagramLink} 
+              onChange={(e) => setInstagramLink(e.target.value)}
+              placeholder="https://instagram.com/profile"
+              className="w-full bg-white disabled:bg-[#f8f7f4] text-slate-900 disabled:text-slate-500 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#c5a880]" 
+            />
+          </div>
+
+          {/* Facebook Profile Link (Optional) */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] text-slate-450 font-bold uppercase tracking-wider flex items-center gap-1">
+              Facebook Profile Link <span className="text-[9px] text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <input 
+              type="url" 
+              disabled={!isEditing}
+              value={facebookLink} 
+              onChange={(e) => setFacebookLink(e.target.value)}
+              placeholder="https://facebook.com/profile"
               className="w-full bg-white disabled:bg-[#f8f7f4] text-slate-900 disabled:text-slate-500 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#c5a880]" 
             />
           </div>

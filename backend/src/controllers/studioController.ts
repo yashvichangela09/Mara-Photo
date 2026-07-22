@@ -53,7 +53,7 @@ export const getMyStudio = async (req: AuthRequest, res: Response) => {
  * Update studio configuration details (Branding, Watermark, Domain)
  */
 export const updateMyStudio = async (req: AuthRequest, res: Response) => {
-  const { name, logoUrl, subdomain, customDomain, watermark, paymentDetails } = req.body;
+  const { name, logoUrl, subdomain, customDomain, watermark, paymentDetails, instagramUrl, facebookUrl } = req.body;
 
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
@@ -118,6 +118,9 @@ export const updateMyStudio = async (req: AuthRequest, res: Response) => {
       if (paymentDetails.merchantName !== undefined) studio.paymentDetails.merchantName = paymentDetails.merchantName;
       if (paymentDetails.uploadedQrUrl !== undefined) studio.paymentDetails.uploadedQrUrl = paymentDetails.uploadedQrUrl;
     }
+
+    if (instagramUrl !== undefined) studio.instagramUrl = instagramUrl;
+    if (facebookUrl !== undefined) studio.facebookUrl = facebookUrl;
 
     await studio.save();
     return res.json({ message: 'Studio updated successfully', studio });
