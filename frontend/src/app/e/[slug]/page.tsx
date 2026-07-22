@@ -6,7 +6,7 @@ import {
   ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, 
   Settings, Camera, Trash2, Loader2, Check, Copy, ZoomIn, Play, ShieldCheck, RefreshCw, ScanFace, 
   ChevronRight, ChevronLeft, LayoutGrid, Sliders, X, Download, Loader, Sparkles, CalendarDays, 
-  Lock, Key, AlertCircle, Search 
+  Lock, Key, AlertCircle, Search, Eye, EyeOff 
 } from 'lucide-react';
 import PhotoAlbum from 'react-photo-album';
 import confetti from 'canvas-confetti';
