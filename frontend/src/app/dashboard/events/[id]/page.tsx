@@ -767,8 +767,9 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                           )}
                           {formData.watermarkType === 'TEXT' && formData.watermarkText && (
                              <div 
-                               className="absolute pointer-events-none text-slate-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] font-bold whitespace-nowrap"
+                               className="absolute pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] font-bold whitespace-nowrap"
                                style={{
+                                 color: formData.watermarkTextColor,
                                  opacity: formData.watermarkOpacity / 100,
                                  fontSize: `${formData.watermarkWidth * 0.3}px`, 
                                  ...getPreviewPosition(formData.watermarkPosition)

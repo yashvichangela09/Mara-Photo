@@ -624,8 +624,9 @@ export default function CreateEventPage() {
                       )}
                       {watermarkType === 'TEXT' && watermarkText && (
                           <div 
-                            className="absolute pointer-events-none text-slate-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] font-bold whitespace-nowrap"
+                            className="absolute pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] font-bold whitespace-nowrap"
                             style={{
+                              color: watermarkTextColor,
                               opacity: watermarkOpacity / 100,
                               fontSize: `${watermarkWidth * 0.3}px`, 
                               ...(() => {
