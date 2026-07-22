@@ -808,11 +808,11 @@ export default function ClientGallery() {
                     media: m
                  }))}
                  columns={(containerWidth) => {
-                   if (containerWidth < 400) return 2;
-                   if (containerWidth < 700) return 3;
-                   if (containerWidth < 1000) return 5;
-                   return 6;
-                 }}
+                    if (containerWidth < 400) return 3;
+                    if (containerWidth < 700) return 4;
+                    if (containerWidth < 1000) return 6;
+                    return 8;
+                  }}
                  spacing={16}
                  render={{
                    wrapper: ({ style, children, ...rest }, { photo }) => {
@@ -907,7 +907,7 @@ export default function ClientGallery() {
                     key: m._id,
                     media: m
                  }))}
-                 targetRowHeight={140}
+                 targetRowHeight={100}
                  spacing={16}
                  render={{
                    wrapper: ({ style, children, ...rest }, { photo }) => {

@@ -521,14 +521,14 @@ export default function EventPhotosPage() {
       {/* Masonry Photo Gallery */}
       <main className="max-w-[1800px] mx-auto px-6 py-8">
         {media.length > 0 ? (
-          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-6">
+          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-6 xl:columns-8 gap-4">
             {media.map((m, index) => {
               const imgSrc = resolveMediaUrl(m);
 
               return (
                 <div
                   key={m._id}
-                  className="break-inside-avoid mb-6 overflow-hidden rounded-xl cursor-pointer group relative bg-white shadow-sm hover:shadow-md transition-all border border-slate-200"
+                  className="break-inside-avoid mb-4 overflow-hidden rounded-xl cursor-pointer group relative bg-white shadow-sm hover:shadow-md transition-all border border-slate-200"
                   onClick={() => setLightboxIndex(index)}
                 >
                   <img
