@@ -44,8 +44,8 @@ const EventSchema = new Schema<IEvent>({
   name: { type: String, required: true },
   code: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
   clientName: { type: String, required: true },
-  clientMobile: { type: String, required: true },
-  clientEmail: { type: String, required: true, lowercase: true, trim: true },
+  clientMobile: { type: String },
+  clientEmail: { type: String, lowercase: true, trim: true },
   date: { type: Date, required: true },
   type: {
     type: String,

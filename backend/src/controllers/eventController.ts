@@ -101,23 +101,29 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
 
     // Auto-sync client to Customers directory
     try {
-      let customer = await Customer.findOne({ 
-        studioId: studio._id, 
-        $or: [ { phone: clientMobile }, { email: clientEmail } ]
-      });
+      if (clientMobile || clientEmail) {
+        const queryOr: any[] = [];
+        if (clientMobile) queryOr.push({ phone: clientMobile });
+        if (clientEmail) queryOr.push({ email: clientEmail });
 
-      if (!customer) {
-        await Customer.create({
-          studioId: studio._id,
-          name: clientName,
-          phone: clientMobile,
-          email: clientEmail,
-          totalEvents: 1,
-          status: 'Active'
+        let customer = await Customer.findOne({ 
+          studioId: studio._id, 
+          $or: queryOr
         });
-      } else {
-        customer.totalEvents = (customer.totalEvents || 0) + 1;
-        await customer.save();
+
+        if (!customer) {
+          await Customer.create({
+            studioId: studio._id,
+            name: clientName,
+            phone: clientMobile || '',
+            email: clientEmail || '',
+            totalEvents: 1,
+            status: 'Active'
+          });
+        } else {
+          customer.totalEvents = (customer.totalEvents || 0) + 1;
+          await customer.save();
+        }
       }
     } catch (custErr) {
       console.error('Error syncing customer:', custErr);
@@ -337,8 +343,8 @@ export const updateEvent = async (req: AuthRequest, res: Response) => {
 
     if (name) event.name = name;
     if (clientName) event.clientName = clientName;
-    if (clientMobile) event.clientMobile = clientMobile;
-    if (clientEmail) event.clientEmail = clientEmail;
+    if (clientMobile !== undefined) event.clientMobile = clientMobile;
+    if (clientEmail !== undefined) event.clientEmail = clientEmail;
     if (date) event.date = new Date(date);
     if (type) event.type = type;
     if (coverImageUrl !== undefined) event.coverImageUrl = coverImageUrl;
