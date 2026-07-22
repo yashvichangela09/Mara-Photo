@@ -61,6 +61,7 @@ export default function ClientGallery() {
   const [media, setMedia] = useState<any[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const [password, setPassword] = useState('');
+  const [showEventPassword, setShowEventPassword] = useState(false);
   const [authError, setAuthError] = useState('');
 
   // Guest Sign-In States
@@ -490,13 +491,20 @@ export default function ClientGallery() {
             <div className="relative">
               <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c5a880]" />
               <input
-                type="password"
+                type={showEventPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter event password"
-                className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl pl-11 pr-4 py-3.5 text-sm font-semibold text-[#09090b] placeholder:text-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white text-center tracking-wider transition-all"
+                className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl pl-11 pr-12 py-3.5 text-sm font-semibold text-[#09090b] placeholder:text-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white text-center tracking-wider transition-all"
               />
+              <button
+                type="button"
+                onClick={() => setShowEventPassword(!showEventPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showEventPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
             <button
               type="submit"
@@ -504,6 +512,11 @@ export default function ClientGallery() {
             >
               Unlock Gallery
             </button>
+            <div className="text-center mt-1">
+              <span className="text-[11px] text-slate-400 hover:text-[#c5a880] cursor-help font-semibold transition-colors">
+                Forgot password?
+              </span>
+            </div>
           </form>
         </div>
 

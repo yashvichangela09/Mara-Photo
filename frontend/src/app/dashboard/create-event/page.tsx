@@ -17,6 +17,7 @@ export default function CreateEventPage() {
   const [eventType, setEventType] = useState('WEDDING');
   const [accessType, setAccessType] = useState('PUBLIC');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [eventLocation, setEventLocation] = useState('');
   const [eventTime, setEventTime] = useState('');
   const [totalDays, setTotalDays] = useState(1);
@@ -167,7 +168,7 @@ export default function CreateEventPage() {
           }
         }} className="space-y-6">
           <div>
-            <label className="form-label">Event Name</label>
+            <label className="form-label">Family / Couple Name</label>
             <input 
               type="text" 
               className="form-input" 
@@ -190,24 +191,22 @@ export default function CreateEventPage() {
           </div>
 
           <div>
-            <label className="form-label">Client Mobile</label>
+            <label className="form-label">Phone Number</label>
             <input 
               type="text" 
               className="form-input" 
               value={clientMobile}
               onChange={(e) => setClientMobile(e.target.value)}
-              required
             />
           </div>
 
           <div>
-            <label className="form-label">Client Email</label>
+            <label className="form-label">Email Address</label>
             <input 
               type="email" 
               className="form-input" 
               value={clientEmail}
               onChange={(e) => setClientEmail(e.target.value)}
-              required
             />
           </div>
 
@@ -242,14 +241,23 @@ export default function CreateEventPage() {
           {accessType === 'PASSWORD' && (
             <div>
               <label className="form-label text-rose-500">Event Password</label>
-              <input 
-                type="text" 
-                className="form-input border-rose-200 focus:border-rose-500 bg-rose-50/30" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Set a password for the gallery"
-                required
-              />
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  className="form-input border-rose-200 focus:border-rose-500 bg-rose-50/30 pr-10" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Set a password for the gallery"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
           )}
 

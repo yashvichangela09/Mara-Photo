@@ -2,7 +2,7 @@
 import React, { useState, useEffect, use, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, Settings, Camera, Trash2, Loader2, Check, Copy } from 'lucide-react';
+import { ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, Settings, Camera, Trash2, Loader2, Check, Copy, Eye, EyeOff } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import toast from 'react-hot-toast';
 import CustomDatePicker from '../../../../components/CustomDatePicker';
@@ -28,6 +28,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
   const [mediaItems, setMediaItems] = useState<any[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [showPassword, setShowPassword] = useState(false);
 
   const fetchEventDetails = async () => {
     try {
@@ -457,7 +458,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
               }
             }}>
               <div>
-                <label className="edit-label">Event Name</label>
+                <label className="edit-label">Family / Couple Name</label>
                 <input 
                   type="text" 
                   className="edit-input" 
@@ -478,7 +479,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="edit-label">Client Mobile</label>
+                  <label className="edit-label">Phone Number</label>
                   <input 
                     type="text" 
                     className="edit-input" 
@@ -487,7 +488,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                   />
                 </div>
                 <div>
-                  <label className="edit-label">Client Email</label>
+                  <label className="edit-label">Email Address</label>
                   <input 
                     type="email" 
                     className="edit-input" 
@@ -596,13 +597,22 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
               {formData.accessType === 'PASSWORD' && (
                 <div>
                   <label className="edit-label text-[#c5a880] font-bold">Event Password / PIN</label>
-                  <input 
-                    type="text" 
-                    className="edit-input border-[#c5a880]/40 focus:border-[#c5a880] bg-[#f8f5f0]" 
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder="Enter event password"
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      className="edit-input border-[#c5a880]/40 focus:border-[#c5a880] bg-[#f8f5f0] pr-10" 
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      placeholder="Enter event password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
               )}
 
