@@ -53,10 +53,10 @@ export default function CustomDatePicker({
         onChange={handleChange}
         showTimeSelect={type === 'time'}
         showTimeSelectOnly={type === 'time'}
-        timeFormat="HH:mm"
+        timeFormat="h:mm aa"
         timeIntervals={15}
         timeCaption="Time"
-        dateFormat={type === 'time' ? 'HH:mm' : 'yyyy-MM-dd'}
+        dateFormat={type === 'time' ? 'h:mm aa' : 'yyyy-MM-dd'}
         className={`${className} !pl-10 cursor-pointer transition-all duration-300 group-hover:border-[#c5a880] group-hover:shadow-[0_0_0_3px_rgba(197,168,128,0.15)]`}
         required={required}
         placeholderText={type === 'time' ? "Select time" : "Select date"}

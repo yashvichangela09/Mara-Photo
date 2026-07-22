@@ -19,6 +19,16 @@ const MONTH_NAMES = [
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const formatTimeToAMPM = (timeStr: string) => {
+  if (!timeStr) return '';
+  const [hourStr, minStr] = timeStr.split(':');
+  const hour = parseInt(hourStr, 10);
+  if (isNaN(hour)) return timeStr;
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minStr} ${ampm}`;
+};
+
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
 }
@@ -260,8 +270,8 @@ export default function CalendarPage() {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          background: linear-gradient(135deg, #c5a880 0%, #d4b896 100%);
-          color: #1e1b18;
+          background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+          color: #ffffff;
         }
         .form-label {
           font-size: 10px;
@@ -641,7 +651,7 @@ export default function CalendarPage() {
                               <div className="flex-1">
                                 <p className="font-bold text-sm text-slate-900">{shoot.eventName}</p>
                                 <p className="text-[10px] text-slate-400 font-mono mt-1">
-                                  {shootDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} • {shoot.time || '09:00'}
+                                  {shootDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} • {formatTimeToAMPM(shoot.time || '09:00')}
                                   {shoot.location && <span className="ml-2"><MapPin className="inline h-2.5 w-2.5 -mt-0.5" /> {shoot.location}</span>}
                                 </p>
                                 <div className="flex flex-wrap items-center gap-2 mt-2.5">
@@ -713,7 +723,7 @@ export default function CalendarPage() {
                 <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400 font-medium">
                   <span>{new Date(viewingShoot.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                  <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {viewingShoot.time || '09:00'}</span>
+                  <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {formatTimeToAMPM(viewingShoot.time || '09:00')}</span>
                 </div>
               </div>
 

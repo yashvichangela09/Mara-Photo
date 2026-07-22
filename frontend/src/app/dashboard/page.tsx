@@ -4,6 +4,16 @@ import { useDashboard } from './DashboardContext';
 import { Calendar, Image as ImageIcon, RefreshCw, TrendingUp, Zap, Bell, AlertTriangle } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 
+const formatTimeToAMPM = (timeStr: string) => {
+  if (!timeStr) return '';
+  const [hourStr, minStr] = timeStr.split(':');
+  const hour = parseInt(hourStr, 10);
+  if (isNaN(hour)) return timeStr;
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minStr} ${ampm}`;
+};
+
 interface Stats {
   events: number;
   photos: number;
@@ -143,7 +153,6 @@ export default function DashboardOverview() {
             Refresh
           </button>
         </div>
-
         {/* Active Reminders Alert Banners */}
         {activeReminders.length > 0 && (
           <div className="space-y-3">
@@ -157,7 +166,7 @@ export default function DashboardOverview() {
                     Upcoming Shoot Reminder: {shoot.eventName}
                   </h4>
                   <p className="text-xs text-slate-500 font-semibold mt-1">
-                    Scheduled on <strong>{new Date(shoot.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</strong> at <strong>{shoot.time}</strong> at <strong>{shoot.location || 'Not Specified'}</strong>.
+                    Scheduled on <strong>{new Date(shoot.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</strong> at <strong>{formatTimeToAMPM(shoot.time)}</strong> at <strong>{shoot.location || 'Not Specified'}</strong>.
                   </p>
                 </div>
                 <span className="text-[10px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-2 py-1 rounded-full uppercase tracking-wider">
