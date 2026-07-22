@@ -8,7 +8,7 @@ import {
   ChevronRight, ChevronLeft, LayoutGrid, Sliders, X, Download, Loader, Sparkles, CalendarDays, 
   Lock, Key, AlertCircle, Search, Eye, EyeOff 
 } from 'lucide-react';
-import PhotoAlbum from 'react-photo-album';
+import JSZip from 'jszip';
 import confetti from 'canvas-confetti';
 import { apiClient } from '../../../lib/api';
 
@@ -423,10 +423,26 @@ export default function ClientGallery() {
     try {
       const res = await apiClient.post('/media/download-bulk', { mediaIds: selectedMediaIds });
       const downloads = res.data.downloads || [];
-      for (const d of downloads) {
-        await downloadSingleFile(d.url, d.name || `photo_${Date.now()}`);
-        await new Promise((r) => setTimeout(r, 350));
+      const zip = new JSZip();
+      for (let i = 0; i < downloads.length; i++) {
+        const item = downloads[i];
+        try {
+          const response = await fetch(item.url);
+          const blob = await response.blob();
+          zip.file(item.filename || `photo_${i+1}.jpg`, blob);
+        } catch (fetchErr) {
+          console.error("Failed to fetch photo for zip", fetchErr);
+        }
       }
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const blobUrl = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${event?.name || 'Photos'}_selected.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
       setSelectedMediaIds([]);
       setIsMultiSelect(false);
     } catch (err) {
@@ -762,6 +778,19 @@ export default function ClientGallery() {
             <div className="flex items-center gap-3">
               <span className="text-xs text-slate-600 font-bold">Selected: <strong>{selectedMediaIds.length}</strong></span>
               <button 
+                onClick={() => {
+                  const allIds = galleryMedia.map(m => m._id);
+                  if (selectedMediaIds.length === allIds.length) {
+                    setSelectedMediaIds([]);
+                  } else {
+                    setSelectedMediaIds(allIds);
+                  }
+                }}
+                className="text-xs text-[#c5a880] hover:underline font-bold transition-all px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-[#faf9f6] border border-slate-200"
+              >
+                {selectedMediaIds.length === galleryMedia.length ? 'Deselect All' : 'Select All'}
+              </button>
+              <button 
                 onClick={handleBulkDownload} 
                 disabled={selectedMediaIds.length === 0 || downloadingBulk} 
                 className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] text-xs font-extrabold px-4 py-2.5 rounded-xl disabled:opacity-50 flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
@@ -797,202 +826,75 @@ export default function ClientGallery() {
                 </div>
               </div>
             )}
-            {viewType === 'masonry' ? (
-               <PhotoAlbum 
-                 layout="masonry"
-                 photos={galleryMedia.map(m => ({
-                    src: resolveMediaUrl(m),
-                    width: m.width || (m.type === 'VIDEO' ? 1920 : 1600),
-                    height: m.height || (m.type === 'VIDEO' ? 1080 : 1200),
-                    key: m._id,
-                    media: m
-                 }))}
-                 columns={(containerWidth) => {
-                    if (containerWidth < 400) return 3;
-                    if (containerWidth < 700) return 4;
-                    if (containerWidth < 1000) return 6;
-                    return 8;
-                  }}
-                 spacing={16}
-                 render={{
-                   wrapper: ({ style, children, ...rest }, { photo }) => {
-                     const m = (photo as any).media;
-                     const isSelected = selectedMediaIds.includes(m._id);
-                     return (
-                       <div 
-                         {...rest} 
-                         style={{ ...style, position: 'relative', overflow: 'hidden', borderRadius: '0.75rem' }} 
-                         className={`group transition-all duration-300 bg-slate-100 flex items-center justify-center ${isSelected ? 'border-2 border-[#c5a880] ring-4 ring-[#c5a880]/20 shadow-lg scale-95' : 'border border-slate-200/60 shadow-sm hover:shadow-xl hover:-translate-y-1 z-0 hover:z-10 cursor-pointer'}`}
-                       >
-                         {children}
-                       </div>
-                     );
-                   },
-                   image: (imageProps, { photo }) => {
-                     const m = (photo as any).media;
-                     if (m?.type === 'VIDEO') {
-                       return (
-                         <div style={{ ...imageProps.style, position: 'relative', width: '100%', height: '100%', minHeight: '140px', backgroundColor: '#09090b' }}>
-                           <video 
-                             src={resolveMediaUrl(m)} 
-                             className="w-full h-full object-cover pointer-events-none opacity-90" 
-                             muted 
-                             playsInline 
-                             preload="metadata"
-                           />
-                         </div>
-                       );
-                     }
-                     return (
-                       <img 
-                         {...imageProps} 
-                         style={{ ...imageProps.style, transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} 
-                         className={`${imageProps.className || ''} group-hover:scale-110 object-cover`} 
-                       />
-                     );
-                   },
-                   extras: (_, { photo }) => {
-                     const m = (photo as any).media;
-                     const isSelected = selectedMediaIds.includes(m._id);
-                     return (
-                       <>
-                         {/* Video overlay */}
-                         {m.type === 'VIDEO' && (
-                           <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors pointer-events-none z-10">
-                             <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg">
-                               <Play className="h-5 w-5 text-white fill-white ml-0.5" />
-                             </div>
-                           </div>
-                         )}
 
-                         {/* Similarity badge */}
-                         {searchActive && m.similarityPercent && (
-                           <div className="absolute top-3 left-3 z-20">
-                             <div className={`px-2 py-1 rounded-lg text-[10px] font-bold backdrop-blur-md border flex items-center gap-1 ${
-                               m.confidence === 'HIGH' 
-                                 ? 'bg-emerald-500/90 border-emerald-400/50 text-white' 
-                                 : 'bg-amber-500/90 border-amber-400/50 text-white'
-                             }`}>
-                               <ShieldCheck className="h-3 w-3" />
-                               {m.similarityPercent}% match
-                             </div>
-                           </div>
-                         )}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-4">
+              {galleryMedia.map((m, idx) => {
+                const isSelected = selectedMediaIds.includes(m._id);
+                return (
+                  <div 
+                    key={m._id || idx}
+                    className={`relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border transition-all duration-300 group cursor-pointer ${
+                      isSelected 
+                        ? 'border-2 border-[#FF6B00] ring-4 ring-[#FF6B00]/20 shadow-lg scale-95' 
+                        : 'border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[#c5a880]'
+                    }`}
+                  >
+                    {/* Media content */}
+                    {m.type === 'VIDEO' ? (
+                      <div className="w-full h-full relative bg-[#09090b]">
+                        <video 
+                          src={resolveMediaUrl(m)} 
+                          className="w-full h-full object-cover pointer-events-none opacity-90" 
+                          muted 
+                          playsInline 
+                          preload="metadata"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/25 transition-colors pointer-events-none z-10">
+                          <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg">
+                            <Play className="h-4.5 w-4.5 text-white fill-white ml-0.5" />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img 
+                        src={resolveMediaUrl(m)} 
+                        alt={`Media ${idx + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    )}
 
-                         {isMultiSelect ? (
-                           <div className="absolute inset-0 bg-black/10 flex items-start justify-start p-3 cursor-pointer z-30" onClick={() => toggleSelectMedia(m._id)}>
-                             <div className={`w-5.5 h-5.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-[#FF6B00] border-[#FF6B00] text-white' : 'border-white/40 bg-black/10'}`}>
-                               {isSelected && <Check className="h-4.5 w-4.5" />}
-                             </div>
-                           </div>
-                         ) : (
-                           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 cursor-pointer z-30" onClick={() => setSelectedItem(m)}>
-                             <div className="p-2.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:scale-105 transition-transform">
-                               <ZoomIn className="h-4.5 w-4.5" />
-                             </div>
-                           </div>
-                         )}
-                       </>
-                     );
-                   }
-                 }}
-               />
-            ) : (
-               <PhotoAlbum 
-                 layout="rows"
-                 photos={galleryMedia.map(m => ({
-                    src: resolveMediaUrl(m),
-                    width: m.width || (m.type === 'VIDEO' ? 1920 : 1600),
-                    height: m.height || (m.type === 'VIDEO' ? 1080 : 1200),
-                    key: m._id,
-                    media: m
-                 }))}
-                 targetRowHeight={100}
-                 spacing={16}
-                 render={{
-                   wrapper: ({ style, children, ...rest }, { photo }) => {
-                     const m = (photo as any).media;
-                     const isSelected = selectedMediaIds.includes(m._id);
-                     return (
-                       <div 
-                         {...rest} 
-                         style={{ ...style, overflow: 'hidden', borderRadius: '0.75rem' }} 
-                         className={`group relative transition-all duration-300 bg-slate-100 flex items-center justify-center ${isSelected ? 'border-2 border-[#FF6B00] ring-4 ring-[#FF6B00]/20 shadow-lg scale-95' : 'border border-slate-200/60 shadow-sm hover:shadow-xl hover:-translate-y-1 z-0 hover:z-10 cursor-pointer'}`}
-                       >
-                         {children}
-                       </div>
-                     );
-                   },
-                   image: (imageProps, { photo }) => {
-                     const m = (photo as any).media;
-                     if (m?.type === 'VIDEO') {
-                       return (
-                         <div style={{ ...imageProps.style, position: 'relative', width: '100%', height: '100%', minHeight: '140px', backgroundColor: '#09090b' }}>
-                           <video 
-                             src={resolveMediaUrl(m)} 
-                             className="w-full h-full object-cover pointer-events-none opacity-90" 
-                             muted 
-                             playsInline 
-                             preload="metadata"
-                           />
-                         </div>
-                       );
-                     }
-                     return (
-                       <img 
-                         {...imageProps} 
-                         style={{ ...imageProps.style, transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} 
-                         className={`${imageProps.className || ''} group-hover:scale-110 object-cover`} 
-                       />
-                     );
-                   },
-                   extras: (_, { photo }) => {
-                     const m = (photo as any).media;
-                     const isSelected = selectedMediaIds.includes(m._id);
-                     return (
-                       <>
-                         {/* Video overlay */}
-                         {m.type === 'VIDEO' && (
-                           <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors pointer-events-none z-10">
-                             <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg">
-                               <Play className="h-5 w-5 text-white fill-white ml-0.5" />
-                             </div>
-                           </div>
-                         )}
+                    {/* Similarity/confidence badge */}
+                    {searchActive && m.similarityPercent && (
+                      <div className="absolute top-2.5 left-2.5 z-20">
+                        <div className={`px-2 py-0.5 rounded-lg text-[9px] font-bold backdrop-blur-md border flex items-center gap-1 ${
+                          m.confidence === 'HIGH' 
+                            ? 'bg-emerald-500/90 border-emerald-400/50 text-white' 
+                            : 'bg-amber-500/90 border-amber-400/50 text-white'
+                        }`}>
+                          <ShieldCheck className="h-3 w-3" />
+                          {m.similarityPercent}% match
+                        </div>
+                      </div>
+                    )}
 
-                         {/* Similarity badge */}
-                         {searchActive && m.similarityPercent && (
-                           <div className="absolute top-3 left-3 z-20">
-                             <div className={`px-2 py-1 rounded-lg text-[10px] font-bold backdrop-blur-md border flex items-center gap-1 ${
-                               m.confidence === 'HIGH' 
-                                 ? 'bg-emerald-500/90 border-emerald-400/50 text-white' 
-                                 : 'bg-amber-500/90 border-amber-400/50 text-white'
-                             }`}>
-                               <ShieldCheck className="h-3 w-3" />
-                               {m.similarityPercent}% match
-                             </div>
-                           </div>
-                         )}
-
-                         {isMultiSelect ? (
-                           <div className="absolute inset-0 bg-black/10 flex items-start justify-start p-3 cursor-pointer z-30" onClick={() => toggleSelectMedia(m._id)}>
-                             <div className={`w-5.5 h-5.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-[#FF6B00] border-[#FF6B00] text-white' : 'border-white/40 bg-black/10'}`}>
-                               {isSelected && <Check className="h-4.5 w-4.5" />}
-                             </div>
-                           </div>
-                         ) : (
-                           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 cursor-pointer z-30" onClick={() => setSelectedItem(m)}>
-                             <div className="p-2.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:scale-105 transition-transform">
-                               <ZoomIn className="h-4.5 w-4.5" />
-                             </div>
-                           </div>
-                         )}
-                       </>
-                     );
-                   }
-                 }}
-               />
-            )}
+                    {/* Multi select overlay */}
+                    {isMultiSelect ? (
+                      <div className="absolute inset-0 bg-black/5 flex items-start justify-start p-3 cursor-pointer z-30" onClick={() => toggleSelectMedia(m._id)}>
+                        <div className={`w-5.5 h-5.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-[#FF6B00] border-[#FF6B00] text-white' : 'border-white/40 bg-black/25'}`}>
+                          {isSelected && <Check className="h-4.5 w-4.5" />}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 cursor-pointer z-30" onClick={() => setSelectedItem(m)}>
+                        <div className="p-2.5 rounded-full bg-white/25 backdrop-blur-md border border-white/30 text-white hover:scale-105 transition-transform">
+                          <ZoomIn className="h-4.5 w-4.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ) : (
           <div className="py-24 text-center glass-panel bg-white border-slate-200 rounded-3xl flex flex-col items-center justify-center p-8 max-w-xl mx-auto text-slate-500 shadow-sm">
