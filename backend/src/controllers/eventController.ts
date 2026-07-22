@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import QRCode from 'qrcode';
+import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../middlewares/auth';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'default_super_secret_jwt_access_token_key_1234';
 import { Event, Studio, User, Media } from '../models';
 import Customer from '../models/Customer';
 import { sendAdminNotificationEmail, sendEventInviteEmail } from '../services/EmailService';
@@ -187,10 +190,29 @@ export const getEventByCode = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Event gallery not found' });
     }
 
-    // Redact passwordHash and passwordPin before sending to public visitors
     const eventObj = event.toObject();
+    
+    // Check if the request is from the owner/studio team to show current password
+    let isOwnerOrStaff = false;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
+        const populatedOwnerId = (event.studioId as any)?.ownerId?._id || (event.studioId as any)?.ownerId;
+        if (decoded.role === 'SUPER_ADMIN' || 
+            (decoded.userId && populatedOwnerId && populatedOwnerId.toString() === decoded.userId.toString())) {
+          isOwnerOrStaff = true;
+        }
+      } catch (e) {
+        // Treat as public visitor
+      }
+    }
+
     delete eventObj.passwordHash;
-    delete eventObj.passwordPin;
+    if (!isOwnerOrStaff) {
+      delete eventObj.passwordPin;
+    }
 
     return res.json({ event: eventObj });
   } catch (err: any) {
