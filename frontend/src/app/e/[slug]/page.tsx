@@ -78,7 +78,7 @@ export default function ClientGallery() {
 
   // Selfie Search Modal
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [searchTab, setSearchTab] = useState<'upload' | 'camera'>('upload');
+  const [searchTab, setSearchTab] = useState<'upload' | 'camera'>('camera');
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
@@ -443,7 +443,7 @@ export default function ClientGallery() {
     setSearchProgress(0);
     setSearchStage('');
     clearSelfie();
-    setSearchTab('upload');
+    setSearchTab('camera');
   };
 
   // 1. Locked Screen
@@ -1017,7 +1017,7 @@ export default function ClientGallery() {
 
       {/* ── Floating Action Button ── */}
       <button 
-        onClick={() => setSearchModalOpen(true)} 
+        onClick={() => { setSearchModalOpen(true); startWebcam(); }} 
         className="fixed bottom-8 right-8 z-35 group"
       >
         <div className="relative">
@@ -1109,17 +1109,6 @@ export default function ClientGallery() {
             <div className="p-6 -mt-3">
               <div className="bg-slate-100 p-1 rounded-xl flex mb-6">
                 <button 
-                  onClick={() => { setSearchTab('upload'); stopWebcam(); }}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                    searchTab === 'upload' 
-                      ? 'bg-white text-slate-800 shadow-sm' 
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <Upload className="h-4 w-4" />
-                  Upload Photo
-                </button>
-                <button 
                   onClick={startWebcam}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
                     searchTab === 'camera' 
@@ -1129,6 +1118,17 @@ export default function ClientGallery() {
                 >
                   <Camera className="h-4 w-4" />
                   Face Scan
+                </button>
+                <button 
+                  onClick={() => { setSearchTab('upload'); stopWebcam(); }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                    searchTab === 'upload' 
+                      ? 'bg-white text-slate-800 shadow-sm' 
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload Photo
                 </button>
               </div>
 
