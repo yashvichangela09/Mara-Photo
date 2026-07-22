@@ -38,6 +38,7 @@ export default function CreateEventPage() {
   const [watermarkWidth, setWatermarkWidth] = useState(20);
   const [watermarkHeight, setWatermarkHeight] = useState(20);
   const [watermarkOpacity, setWatermarkOpacity] = useState(50);
+  const [watermarkTextColor, setWatermarkTextColor] = useState('#ffffff');
 
   const [addToPortfolio, setAddToPortfolio] = useState(false);
   const router = useRouter();
@@ -139,6 +140,7 @@ export default function CreateEventPage() {
                 type: watermarkType,
                 text: watermarkText,
                 logoUrl: watermarkLogoUrl,
+                textColor: watermarkTextColor,
                 position: watermarkPosition,
                 width: watermarkWidth,
                 height: watermarkHeight,
@@ -461,15 +463,28 @@ export default function CreateEventPage() {
                 </div>
 
                 {watermarkType === 'TEXT' ? (
-                  <div>
-                    <label className="form-label">Watermark Text</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      
-                      value={watermarkText}
-                      onChange={(e) => setWatermarkText(e.target.value)}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label">Watermark Text</label>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        
+                        value={watermarkText}
+                        onChange={(e) => setWatermarkText(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Watermark Text Color</label>
+                      <select 
+                        className="form-input"
+                        value={watermarkTextColor}
+                        onChange={(e) => setWatermarkTextColor(e.target.value)}
+                      >
+                        <option value="#ffffff">White</option>
+                        <option value="#000000">Black</option>
+                      </select>
+                    </div>
                   </div>
                 ) : (
                   <div>

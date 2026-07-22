@@ -2,7 +2,7 @@
 import React, { useState, useEffect, use, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, Settings, Camera, Trash2, Loader2, Check, Copy, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, Settings, Camera, Trash2, Loader2, Check, Copy, Eye, EyeOff, X } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import toast from 'react-hot-toast';
 import CustomDatePicker from '../../../../components/CustomDatePicker';
@@ -192,10 +192,26 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
     watermarkType: 'LOGO',
     watermarkText: '',
     watermarkLogoUrl: '',
+    watermarkTextColor: '#ffffff',
     watermarkPosition: 'BOTTOM_RIGHT',
     watermarkWidth: 20,
     watermarkOpacity: 50
   });
+
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+
+  const handleDeleteMedia = async (mediaId: string) => {
+    if (!window.confirm('Are you sure you want to delete this file?')) return;
+    try {
+      await apiClient.delete(`/media/${mediaId}`);
+      setMediaItems(mediaItems.filter(item => item._id !== mediaId));
+      setSelectedItem(null);
+      toast.success('Media file deleted successfully');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete media file');
+    }
+  };
 
   const EVENT_TYPES = [
     'WEDDING', 'PRE WEDDING', 'RECEPTION', 'BIRTHDAY', 'CORPORATE', 
@@ -221,6 +237,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
         watermarkType: event.watermark?.type || 'LOGO',
         watermarkText: event.watermark?.text || '',
         watermarkLogoUrl: event.watermark?.logoUrl || '',
+        watermarkTextColor: event.watermark?.textColor || '#ffffff',
         watermarkPosition: event.watermark?.position || 'BOTTOM_RIGHT',
         watermarkWidth: event.watermark?.width || 20,
         watermarkOpacity: (event.watermark?.opacity !== undefined ? event.watermark.opacity * 100 : 50)
@@ -331,19 +348,23 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
             ) : (
                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto pr-2 pb-4">
                  {mediaItems.map((item, idx) => (
-                   <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group">
-                      {item.type === 'VIDEO' ? (
-                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
-                            <Video className="h-8 w-8 text-white/50 mb-2" />
-                            <span className="text-[9px] text-white/70 font-bold uppercase tracking-wider">Video</span>
-                         </div>
-                      ) : (
-                         <img src={item.compressedUrl || item.r2Url} className="w-full h-full object-cover" />
-                      )}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                         <span className="text-[10px] font-bold text-slate-900 px-2 py-1 bg-black/50 rounded uppercase tracking-wider">{item.processedStatus}</span>
-                      </div>
-                   </div>
+                    <div 
+                      key={idx} 
+                      onClick={() => setSelectedItem(item)}
+                      className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group cursor-pointer hover:border-[#c5a880] transition-colors"
+                    >
+                       {item.type === 'VIDEO' ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
+                             <Video className="h-8 w-8 text-white/50 mb-2" />
+                             <span className="text-[9px] text-white/70 font-bold uppercase tracking-wider">Video</span>
+                          </div>
+                       ) : (
+                          <img src={item.compressedUrl || item.r2Url} className="w-full h-full object-cover" />
+                       )}
+                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                          <span className="text-[10px] font-black text-[#c5a880] px-2.5 py-1 bg-white rounded uppercase tracking-wider">Click to view</span>
+                       </div>
+                    </div>
                  ))}
                </div>
             )}
@@ -439,6 +460,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                     type: formData.watermarkType,
                     text: formData.watermarkText,
                     logoUrl: formData.watermarkLogoUrl,
+                    textColor: formData.watermarkTextColor,
                     position: formData.watermarkPosition,
                     width: formData.watermarkWidth,
                     opacity: formData.watermarkOpacity / 100
@@ -647,15 +669,27 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                     </div>
 
                     {formData.watermarkType === 'TEXT' ? (
-                      <div>
-                        <label className="edit-label">Watermark Text</label>
-                        <input 
-                          type="text" 
-                          className="edit-input" 
-                          
-                          value={formData.watermarkText}
-                          onChange={e => setFormData({...formData, watermarkText: e.target.value})}
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="edit-label">Watermark Text</label>
+                          <input 
+                            type="text" 
+                            className="edit-input" 
+                            value={formData.watermarkText}
+                            onChange={e => setFormData({...formData, watermarkText: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <label className="edit-label">Watermark Text Color</label>
+                          <select 
+                            className="edit-input"
+                            value={formData.watermarkTextColor}
+                            onChange={e => setFormData({...formData, watermarkTextColor: e.target.value})}
+                          >
+                            <option value="#ffffff">White</option>
+                            <option value="#000000">Black</option>
+                          </select>
+                        </div>
                       </div>
                     ) : (
                       <div>
@@ -852,6 +886,53 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
         </div>
 
       </div>
+
+      {/* Lightbox / Modal for preview & delete */}
+      {selectedItem && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-6">
+          {/* Header */}
+          <div className="flex justify-between items-center w-full z-10">
+            <span className="text-white text-xs font-black uppercase tracking-widest bg-white/10 px-3 py-1.5 rounded-full border border-white/10">
+              {selectedItem.type || 'PHOTO'}
+            </span>
+            <button 
+              onClick={() => setSelectedItem(null)}
+              className="p-2 bg-white/10 text-white hover:bg-white/20 rounded-xl transition-all border border-white/10"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Media Container */}
+          <div className="flex-1 flex items-center justify-center max-h-[75vh] w-full my-4 relative">
+            {selectedItem.type === 'VIDEO' ? (
+              <video 
+                src={selectedItem.url || selectedItem.r2Url} 
+                controls 
+                autoPlay 
+                className="max-h-full max-w-full rounded-2xl shadow-2xl"
+              />
+            ) : (
+              <img 
+                src={selectedItem.url || selectedItem.r2Url} 
+                alt="Zoom Preview" 
+                className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl border border-white/5 bg-slate-900"
+              />
+            )}
+          </div>
+
+          {/* Actions Footer */}
+          <div className="flex justify-center items-center gap-4 w-full z-10 pb-4">
+            <button 
+              onClick={() => handleDeleteMedia(selectedItem._id)}
+              className="px-6 py-3.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all"
+            >
+              <Trash2 className="h-4.5 w-4.5" />
+              Delete File
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

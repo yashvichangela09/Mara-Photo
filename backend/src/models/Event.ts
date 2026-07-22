@@ -30,6 +30,7 @@ export interface IEvent extends Document {
     type: 'TEXT' | 'LOGO';
     text?: string;
     logoUrl?: string;
+    textColor?: string;
     position: 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'BOTTOM_CENTER';
     width: number;
     height: number;
@@ -77,6 +78,7 @@ const EventSchema = new Schema<IEvent>({
     type: { type: String, enum: ['TEXT', 'LOGO'], default: 'LOGO' },
     text: { type: String },
     logoUrl: { type: String },
+    textColor: { type: String, default: '#ffffff' },
     position: {
       type: String,
       enum: ['TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT', 'BOTTOM_CENTER'],

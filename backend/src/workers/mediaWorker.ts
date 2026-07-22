@@ -119,6 +119,7 @@ const applyWatermark = async (
           opacity: event.watermark.opacity,
           widthPercentage: event.watermark.width,
           heightPercentage: event.watermark.height,
+          textColor: (event.watermark as any).textColor || '#ffffff'
         };
       }
     }
@@ -137,10 +138,11 @@ const applyWatermark = async (
       opacity: studio.watermark.opacity,
       widthPercentage: 18, // Legacy studio default
       heightPercentage: null,
+      textColor: (studio.watermark as any).textColor || '#ffffff'
     };
   }
 
-  const { type, text, logoUrl, position, opacity, widthPercentage, heightPercentage } = wmSettings;
+  const { type, text, logoUrl, position, opacity, widthPercentage, heightPercentage, textColor } = wmSettings;
   const metadata = await sharp(imageBuffer).metadata();
   const width = metadata.width || 1200;
   const height = metadata.height || 800;
@@ -194,7 +196,7 @@ const applyWatermark = async (
       <svg width="${width}" height="${height}">
         <style>
           .watermark-text {
-            fill: #ffffff;
+            fill: ${textColor || '#ffffff'};
             font-size: ${fontSize}px;
             font-family: Arial, sans-serif;
             font-weight: bold;
