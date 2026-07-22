@@ -191,7 +191,7 @@ export default function CreateEventPage() {
           </div>
 
           <div>
-            <label className="form-label">Phone Number</label>
+            <label className="form-label">Phone Number (Optional)</label>
             <input 
               type="text" 
               className="form-input" 
@@ -201,7 +201,7 @@ export default function CreateEventPage() {
           </div>
 
           <div>
-            <label className="form-label">Email Address</label>
+            <label className="form-label">Email Address (Optional)</label>
             <input 
               type="email" 
               className="form-input" 

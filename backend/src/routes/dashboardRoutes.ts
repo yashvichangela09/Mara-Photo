@@ -156,9 +156,11 @@ router.post('/team', async (req: AuthRequest, res) => {
     if (!studio) return res.status(403).json({ error: 'Studio not found' });
     
     // Check for duplicates
-    const existingMember = await Team.findOne({ studioId: studio._id, email: req.body.email });
-    if (existingMember) {
-      return res.status(400).json({ error: 'Team member with this email already exists' });
+    if (req.body.email) {
+      const existingMember = await Team.findOne({ studioId: studio._id, email: req.body.email });
+      if (existingMember) {
+        return res.status(400).json({ error: 'Team member with this email already exists' });
+      }
     }
 
     const member = new Team({ ...req.body, studioId: studio._id });

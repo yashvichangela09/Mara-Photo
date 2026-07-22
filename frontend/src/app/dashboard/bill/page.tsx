@@ -173,6 +173,10 @@ export default function BillPage() {
               </div>
               <div class="invoice-meta">
                 <div class="meta-block">
+                  <h4>Client Name</h4>
+                  <p>${clientName}</p>
+                </div>
+                <div class="meta-block">
                   <h4>Bill Date</h4>
                   <p>${billDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                 </div>
@@ -307,7 +311,7 @@ export default function BillPage() {
         printBill(finalData);
         resetForm();
       } else {
-        setSuccessMsg(billSubView === 'edit' ? 'Invoice updated successfully!' : 'GST Invoice created successfully!');
+        setSuccessMsg(billSubView === 'edit' ? 'Invoice updated successfully!' : 'Invoice created successfully!');
         resetForm();
       }
     } catch (err) {
@@ -324,7 +328,7 @@ export default function BillPage() {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                   <div>
                     <h1 className="text-2xl font-extrabold text-slate-900">Invoices & Billing Log</h1>
-                    <p className="text-xs text-slate-450 mt-1 font-semibold">Generate gst-compliant invoices, track due balances, and log client payouts.</p>
+                    <p className="text-xs text-slate-450 mt-1 font-semibold">Generate professional invoices, track due balances, and log client payouts.</p>
                   </div>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                     <div className="relative w-full sm:w-auto">
@@ -440,7 +444,7 @@ export default function BillPage() {
                 </button>
                 <div className="max-w-2xl mx-auto w-full flex flex-col gap-6 pt-14">
                   <div className="flex items-center justify-center">
-                    <h1 className="text-3xl font-extrabold text-slate-900 text-center">{billSubView === 'edit' ? 'Edit GST Invoice' : 'Create GST Invoice'}</h1>
+                    <h1 className="text-3xl font-extrabold text-slate-900 text-center">{billSubView === 'edit' ? 'Edit Invoice' : 'Create Invoice'}</h1>
                   </div>
                 <form onSubmit={(e) => { e.preventDefault(); handleSaveInvoice(false); }} className=" bg-[#f8f7f4] text-slate-900 border border-slate-200 p-8 rounded-2xl flex flex-col gap-4 text-left shadow-sm">
                   

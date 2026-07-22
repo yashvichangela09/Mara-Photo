@@ -194,8 +194,8 @@ export default function TeamPage() {
                     <input type="tel" value={newMemberPhone} onChange={(e) => setNewMemberPhone(e.target.value)} className="w-full text-center bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-[#c5a880] focus:ring-1 focus:ring-[#c5a880] transition-all" />
                   </div>
                   <div className="flex flex-col gap-1.5 items-center">
-                    <label className="text-[11px] text-slate-400 uppercase font-black tracking-widest text-center">Email Address</label>
-                    <input type="email" required value={newMemberEmail} onChange={(e) => setNewMemberEmail(e.target.value)} className="w-full text-center bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-[#c5a880] focus:ring-1 focus:ring-[#c5a880] transition-all" />
+                    <label className="text-[11px] text-slate-400 uppercase font-black tracking-widest text-center">Email Address (Optional)</label>
+                    <input type="email" value={newMemberEmail} onChange={(e) => setNewMemberEmail(e.target.value)} className="w-full text-center bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-[#c5a880] focus:ring-1 focus:ring-[#c5a880] transition-all" />
                   </div>
                   <div className="flex flex-col gap-1.5 items-center">
                     <label className="text-[11px] text-slate-400 uppercase font-black tracking-widest text-center">Role / Specialization</label>

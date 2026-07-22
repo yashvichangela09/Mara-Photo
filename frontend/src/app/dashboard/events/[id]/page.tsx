@@ -479,7 +479,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="edit-label">Phone Number</label>
+                  <label className="edit-label">Phone Number (Optional)</label>
                   <input 
                     type="text" 
                     className="edit-input" 
@@ -488,7 +488,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                   />
                 </div>
                 <div>
-                  <label className="edit-label">Email Address</label>
+                  <label className="edit-label">Email Address (Optional)</label>
                   <input 
                     type="email" 
                     className="edit-input" 

@@ -343,12 +343,12 @@ export default function QuotationPage() {
               <!-- Meta -->
               <div class="invoice-meta">
                 <div class="meta-block">
-                  <h4>Quotation Date</h4>
-                  <p>${quoteDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                  <h4>Client Name</h4>
+                  <p>${clientName}</p>
                 </div>
                 <div class="meta-block">
-                  <h4>Valid Until</h4>
-                  <p>${validUntil.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                  <h4>Quotation Date</h4>
+                  <p>${quoteDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                 </div>
               </div>
 
