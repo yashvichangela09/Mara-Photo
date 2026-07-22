@@ -4,6 +4,7 @@ export interface IMedia extends Document {
   type: 'PHOTO' | 'VIDEO';
   r2Key: string;
   r2Url: string;
+  name?: string; // stores original filename
   thumbnailUrl?: string; // used for quick gallery grid previews
   compressedUrl?: string; // compressed version (with or without watermark)
   folderPath?: string; // Stores the original relative folder path
@@ -23,6 +24,7 @@ const MediaSchema = new Schema<IMedia>({
   type: { type: String, enum: ['PHOTO', 'VIDEO'], required: true },
   r2Key: { type: String, required: true },
   r2Url: { type: String, required: true },
+  name: { type: String },
   thumbnailUrl: { type: String },
   compressedUrl: { type: String },
   folderPath: { type: String, default: '' },

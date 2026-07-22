@@ -63,15 +63,18 @@ export const uploadMedia = async (req: AuthRequest, res: Response) => {
           }
         }
 
+        const compress = req.query.compress !== 'false';
+        const quality = req.query.quality ? parseInt(req.query.quality as string, 10) : 85;
+
         // Compress large images before uploading to stay under Cloudinary 10MB free tier limit
         let finalBuffer = file.buffer;
         let finalSize = file.size;
 
-        if (type === 'PHOTO') {
+        if (type === 'PHOTO' && compress) {
           // Compress all photos to max 3840px (4K) to save Cloudinary storage and bypass limits
           finalBuffer = await sharp(file.buffer)
             .resize({ width: 3840, height: 3840, fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 85, mozjpeg: true })
+            .jpeg({ quality, mozjpeg: true })
             .withMetadata() // Preserve EXIF data (orientation, etc)
             .toBuffer();
           finalSize = finalBuffer.length;
@@ -86,6 +89,7 @@ export const uploadMedia = async (req: AuthRequest, res: Response) => {
           type,
           r2Key,
           r2Url,
+          name: file.originalname,
           folderPath,
           eventId: event._id,
           studioId: event.studioId,
@@ -197,7 +201,7 @@ export const downloadBulkMedia = async (req: Request, res: Response) => {
       if (media && media.processedStatus === 'COMPLETED') {
         downloadLinks.push({
           id: media._id,
-          filename: media.r2Key.split('/').pop(),
+          filename: media.name || media.r2Key.split('/').pop(),
           url: media.r2Url, // Cloudinary URLs are public by default
         });
       }

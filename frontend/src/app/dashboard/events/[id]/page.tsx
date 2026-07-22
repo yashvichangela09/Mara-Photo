@@ -24,6 +24,12 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
   const videoInputRef = useRef<HTMLInputElement>(null);
   const watermarkInputRef = useRef<HTMLInputElement>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
+  
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadFilesList, setUploadFilesList] = useState<File[]>([]);
+  const [uploadType, setUploadType] = useState<string>('PHOTO');
+  const [uploadCompress, setUploadCompress] = useState(true);
+  const [uploadQuality, setUploadQuality] = useState(80);
 
   const [mediaItems, setMediaItems] = useState<any[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -49,12 +55,20 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !event) return;
+    if (!files || files.length === 0) return;
+    setUploadFilesList(Array.from(files));
+    setUploadType(type);
+    setIsUploadModalOpen(true);
+    if (e.target) e.target.value = '';
+  };
+
+  const handleFileUpload = async (filesToUpload: File[], type: string, compress: boolean, quality: number) => {
+    if (!filesToUpload || filesToUpload.length === 0 || !event) return;
     
     setUploadingMedia(true);
-    setUploadProgress({ current: 0, total: files.length });
+    setUploadProgress({ current: 0, total: filesToUpload.length });
     
     try {
       const chunkSize = 1;
@@ -64,17 +78,17 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
       
       const imageCompression = (await import('browser-image-compression')).default;
 
-      for (let i = 0; i < files.length; i += chunkSize) {
-        const chunk = Array.from(files).slice(i, i + chunkSize);
+      for (let i = 0; i < filesToUpload.length; i += chunkSize) {
+        const chunk = filesToUpload.slice(i, i + chunkSize);
         const formData = new FormData();
         
         for (const file of chunk) {
           let fileToUpload: File | Blob = file;
           
-          if (file.type.startsWith('image/')) {
+          if (file.type.startsWith('image/') && compress) {
             try {
               const options = {
-                maxSizeMB: 2,
+                maxSizeMB: (quality / 100) * 3,
                 maxWidthOrHeight: 2500,
                 useWebWorker: true,
                 alwaysKeepResolution: true
@@ -92,7 +106,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
         }
         
         try {
-          await apiClient.post(`/media/event/${event._id}/upload`, formData, {
+          await apiClient.post(`/media/event/${event._id}/upload?compress=${compress}&quality=${quality}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
           successful += chunk.length;
@@ -101,13 +115,13 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
         }
         
         uploadedCount += chunk.length;
-        setUploadProgress({ current: uploadedCount, total: files.length });
+        setUploadProgress({ current: uploadedCount, total: filesToUpload.length });
       }
       
       if (failed > 0) {
         toast.error(`Uploaded ${successful}, failed ${failed}`);
       } else {
-        toast.success(`Successfully uploaded ${files.length} files!`);
+        toast.success(`Successfully uploaded ${filesToUpload.length} files!`);
       }
       fetchEventDetails();
     } catch (err: any) {
@@ -119,7 +133,6 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
        }
     } finally {
        setUploadingMedia(false);
-       if (e.target) e.target.value = '';
     }
   };
 
@@ -290,9 +303,9 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
-              <input type="file" {...{ webkitdirectory: "true", directory: "true" }} multiple ref={folderInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'FOLDER')} />
-              <input type="file" accept="image/*" multiple ref={photoInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'PHOTO')} />
-              <input type="file" accept="video/*" multiple ref={videoInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'VIDEO')} />
+              <input type="file" {...{ webkitdirectory: "true", directory: "true" }} multiple ref={folderInputRef} className="hidden" onChange={(e) => handleFileSelect(e, 'FOLDER')} />
+              <input type="file" accept="image/*" multiple ref={photoInputRef} className="hidden" onChange={(e) => handleFileSelect(e, 'PHOTO')} />
+              <input type="file" accept="video/*" multiple ref={videoInputRef} className="hidden" onChange={(e) => handleFileSelect(e, 'VIDEO')} />
 
               <div 
                 onClick={() => folderInputRef.current?.click()}
@@ -931,6 +944,115 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
               <Trash2 className="h-4.5 w-4.5" />
               Delete File
             </button>
+          </div>
+        </div>
+      )}
+      {/* Upload settings modal */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 bg-[#09090b]/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-8 max-w-md w-full relative">
+            <button 
+              type="button"
+              onClick={() => {
+                setIsUploadModalOpen(false);
+                setUploadFilesList([]);
+              }}
+              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-all border border-slate-200"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-[#c5a880]/10 flex items-center justify-center text-[#c5a880] mb-4">
+                <Sliders className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-900">Upload Settings</h3>
+              <p className="text-xs text-slate-500 mt-1 font-semibold">
+                Configure quality options for {uploadFilesList.length} selected files.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-3">
+                  Image Quality
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setUploadCompress(false)}
+                    className={`py-3 px-4 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
+                      !uploadCompress 
+                        ? 'border-[#c5a880] bg-[#c5a880]/5 text-[#09090b] ring-2 ring-[#c5a880]/20' 
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="text-sm">💎 Original Size</span>
+                    <span className="text-[10px] text-slate-400 font-medium">No compression</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setUploadCompress(true)}
+                    className={`py-3 px-4 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
+                      uploadCompress 
+                        ? 'border-[#c5a880] bg-[#c5a880]/5 text-[#09090b] ring-2 ring-[#c5a880]/20' 
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="text-sm">⚡ Compress Image</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Reduce file size</span>
+                  </button>
+                </div>
+              </div>
+
+              {uploadCompress && (
+                <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl transition-all">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold text-slate-600">Compression Quality</span>
+                    <span className="text-xs font-black text-[#c5a880] bg-white px-2 py-0.5 rounded-lg border border-slate-150">
+                      {uploadQuality}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="10"
+                    max="100"
+                    value={uploadQuality}
+                    onChange={(e) => setUploadQuality(Number(e.target.value))}
+                    className="w-full custom-slider mt-2"
+                    style={{ '--val': `${uploadQuality}%` } as any}
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-400 font-bold mt-1">
+                    <span>High Compression (Low Size)</span>
+                    <span>High Quality (Large Size)</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUploadModalOpen(false);
+                    setUploadFilesList([]);
+                  }}
+                  className="flex-1 py-3 border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-600 font-bold text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUploadModalOpen(false);
+                    handleFileUpload(uploadFilesList, uploadType, uploadCompress, uploadQuality);
+                  }}
+                  className="flex-1 py-3 bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-bold text-xs rounded-xl transition-colors shadow-sm"
+                >
+                  Start Upload
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
