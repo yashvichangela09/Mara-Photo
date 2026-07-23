@@ -310,7 +310,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
         clientName: event.clientName || '',
         clientMobile: event.clientMobile || '',
         clientEmail: event.clientEmail || '',
-        date: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
+        date: event.date && !isNaN(new Date(event.date).getTime()) ? new Date(event.date).toISOString().split('T')[0] : '',
         type: event.type || 'WEDDING',
         location: event.location || '',
         accessType: event.accessType || 'PUBLIC',
