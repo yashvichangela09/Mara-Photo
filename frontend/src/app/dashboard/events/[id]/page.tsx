@@ -212,6 +212,28 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
   });
 
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([]);
+
+  const handleBulkDelete = async () => {
+    if (selectedMediaIds.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete the ${selectedMediaIds.length} selected files?`)) return;
+    try {
+      setUploadingMedia(true);
+      await apiClient.delete(`/media/event/${event._id}/media`, {
+        data: { mediaIds: selectedMediaIds }
+      });
+      setMediaItems(mediaItems.filter(item => !selectedMediaIds.includes(item._id)));
+      setSelectedMediaIds([]);
+      setSelectMode(false);
+      toast.success('Selected files deleted successfully');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete selected files');
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
 
   const handleDeleteMedia = async (mediaId: string) => {
     if (!window.confirm('Are you sure you want to delete this file?')) return;
@@ -334,12 +356,56 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
           <div className="mt-8">
             <div className="flex items-center justify-between mb-4">
                <h3 className="text-lg font-bold text-slate-900">Media Files ({mediaItems.length})</h3>
-               <button 
-                 onClick={fetchEventDetails}
-                 className="text-xs font-bold text-slate-500 hover:text-[#c5a880] transition-colors"
-               >
-                 Refresh
-               </button>
+               <div className="flex items-center gap-3">
+                 {selectMode ? (
+                   <>
+                     <span className="text-xs text-slate-500 font-bold">Selected: {selectedMediaIds.length}</span>
+                     <button
+                       onClick={() => {
+                         if (selectedMediaIds.length === mediaItems.length) {
+                           setSelectedMediaIds([]);
+                         } else {
+                           setSelectedMediaIds(mediaItems.map(item => item._id));
+                         }
+                       }}
+                       className="text-xs font-bold text-[#c5a880] bg-[#c5a880]/10 hover:bg-[#c5a880]/20 border border-[#c5a880]/20 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                     >
+                       {selectedMediaIds.length === mediaItems.length ? 'Deselect All' : 'Select All'}
+                     </button>
+                     <button
+                       onClick={handleBulkDelete}
+                       disabled={selectedMediaIds.length === 0}
+                       className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                     >
+                       <Trash2 className="w-3.5 h-3.5" /> Delete Selected
+                     </button>
+                     <button
+                       onClick={() => {
+                         setSelectMode(false);
+                         setSelectedMediaIds([]);
+                       }}
+                       className="text-xs font-bold text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                     >
+                       Cancel
+                     </button>
+                   </>
+                 ) : (
+                   <>
+                     <button
+                       onClick={() => setSelectMode(true)}
+                       className="text-xs font-bold text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                     >
+                       Select Multiple
+                     </button>
+                     <button 
+                       onClick={fetchEventDetails}
+                       className="text-xs font-bold text-slate-500 hover:text-[#c5a880] transition-colors cursor-pointer"
+                     >
+                       Refresh
+                     </button>
+                   </>
+                 )}
+              </div>
             </div>
             
             {uploadingMedia && (
@@ -363,9 +429,31 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                  {mediaItems.map((item, idx) => (
                     <div 
                       key={idx} 
-                      onClick={() => setSelectedItem(item)}
-                      className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 group cursor-pointer hover:border-[#c5a880] transition-colors"
+                      onClick={() => {
+                        if (selectMode) {
+                          if (selectedMediaIds.includes(item._id)) {
+                            setSelectedMediaIds(selectedMediaIds.filter(id => id !== item._id));
+                          } else {
+                            setSelectedMediaIds([...selectedMediaIds, item._id]);
+                          }
+                        } else {
+                          setSelectedItem(item);
+                        }
+                      }}
+                      className={`relative aspect-square rounded-xl overflow-hidden bg-slate-100 border-2 transition-all duration-300 group cursor-pointer ${
+                        selectMode && selectedMediaIds.includes(item._id) 
+                          ? 'border-red-500 scale-[0.97] shadow-md shadow-red-500/10' 
+                          : 'border-slate-200 hover:border-[#c5a880]'
+                      }`}
                     >
+                       {/* Selection Checkbox */}
+                       {selectMode && (
+                         <div className="absolute top-2.5 right-2.5 z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all bg-white/90 backdrop-blur-sm border-slate-300">
+                           {selectedMediaIds.includes(item._id) && (
+                             <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                           )}
+                         </div>
+                       )}
                        {item.type === 'VIDEO' ? (
                           <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800">
                              <Video className="h-8 w-8 text-white/50 mb-2" />
@@ -375,7 +463,9 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                           <img src={item.compressedUrl || item.r2Url} className="w-full h-full object-cover" />
                        )}
                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                          <span className="text-[10px] font-black text-[#c5a880] px-2.5 py-1 bg-white rounded uppercase tracking-wider">Click to view</span>
+                          <span className="text-[10px] font-black text-[#c5a880] px-2.5 py-1 bg-white rounded uppercase tracking-wider">
+                            {selectMode ? (selectedMediaIds.includes(item._id) ? 'Deselect' : 'Select') : 'Click to view'}
+                          </span>
                        </div>
                     </div>
                  ))}
