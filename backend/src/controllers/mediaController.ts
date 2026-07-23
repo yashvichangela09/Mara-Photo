@@ -5,6 +5,9 @@ import { Media, Event, Studio, FaceEmbedding } from '../models';
 import { uploadFile, deleteFile, generateSignature } from '../services/StorageService';
 import { photoQueue, videoQueue, processMediaLocal, isRedisAvailable } from '../workers/mediaWorker';
 import sharp from 'sharp';
+// Disable sharp in-memory cache and limit concurrency to prevent Out of Memory (OOM / Status 137) on Render
+sharp.cache(false);
+sharp.concurrency(1);
 
 /**
  * Handle bulk photo and video uploads
