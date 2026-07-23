@@ -72,7 +72,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
     setUploadProgress({ current: 0, total: filesToUpload.length });
     
     try {
-      const CONCURRENCY_LIMIT = 4;
+      const CONCURRENCY_LIMIT = 2;
       let uploadedCount = 0;
       let successful = 0;
       let failed = 0;
@@ -181,6 +181,25 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
 
     return () => clearInterval(interval);
   }, [mediaItems, event?._id]);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!selectedItem) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const selectedIndex = mediaItems.findIndex(m => m._id === selectedItem._id);
+      if (selectedIndex === -1) return;
+      
+      if (e.key === 'ArrowLeft' && selectedIndex > 0) {
+        setSelectedItem(mediaItems[selectedIndex - 1]);
+      } else if (e.key === 'ArrowRight' && selectedIndex < mediaItems.length - 1) {
+        setSelectedItem(mediaItems[selectedIndex + 1]);
+      } else if (e.key === 'Escape') {
+        setSelectedItem(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedItem, mediaItems]);
 
   const getPreviewPosition = (pos: string) => {
     switch (pos) {
