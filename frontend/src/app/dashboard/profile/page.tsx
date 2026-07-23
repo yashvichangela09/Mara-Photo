@@ -211,7 +211,7 @@ export default function ProfilePage() {
               Studio Website Link <span className="text-[9px] text-slate-400 font-normal">(Optional)</span>
             </label>
             <input 
-              type="url" 
+              type="text" 
               disabled={!isEditing}
               value={websiteLink} 
               onChange={(e) => setWebsiteLink(e.target.value)}
@@ -226,7 +226,7 @@ export default function ProfilePage() {
               Instagram Profile Link <span className="text-[9px] text-slate-400 font-normal">(Optional)</span>
             </label>
             <input 
-              type="url" 
+              type="text" 
               disabled={!isEditing}
               value={instagramLink} 
               onChange={(e) => setInstagramLink(e.target.value)}
@@ -241,7 +241,7 @@ export default function ProfilePage() {
               Facebook Profile Link <span className="text-[9px] text-slate-400 font-normal">(Optional)</span>
             </label>
             <input 
-              type="url" 
+              type="text" 
               disabled={!isEditing}
               value={facebookLink} 
               onChange={(e) => setFacebookLink(e.target.value)}
