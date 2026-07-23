@@ -20,16 +20,74 @@ export default function SupportHelpPage() {
     errorMsg, setErrorMsg
   } = context;
 
-  const handleCreateTicket = (e: any) => { e.preventDefault(); setSuccessMsg('Ticket submitted (Dummy)'); };
-  const handleOpenTicket = (ticket: any) => { setSuccessMsg('Opening ticket... (Dummy)'); };
-  
+  const [loading, setLoading] = useState(false);
+  const [loadingTicket, setLoadingTicket] = useState(false);
+  const [loadingReply, setLoadingReply] = useState(false);
   const [supportSubView, setSupportSubView] = useState('list');
   const [newTicketSubject, setNewTicketSubject] = useState('');
   const [newTicketMessage, setNewTicketMessage] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [replyMessage, setReplyMessage] = useState('');
 
-  const handleReplyTicket = (e: any) => { e.preventDefault(); setSuccessMsg('Reply sent (Dummy)'); setReplyMessage(''); };
+  const fetchTickets = async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.get('/support/tickets');
+      setTickets(res.data);
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const handleCreateTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTicketSubject.trim() || !newTicketMessage.trim()) return;
+    setLoadingTicket(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const res = await apiClient.post('/support/ticket', {
+        subject: newTicketSubject,
+        message: newTicketMessage
+      });
+      setTickets([res.data, ...tickets]);
+      setNewTicketSubject('');
+      setNewTicketMessage('');
+      setSuccessMsg('Ticket submitted successfully!');
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.error || 'Failed to submit ticket');
+    } finally {
+      setLoadingTicket(false);
+    }
+  };
+
+  const handleReplyTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyMessage.trim() || !selectedTicket) return;
+    setLoadingReply(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const res = await apiClient.post(`/support/ticket/${selectedTicket._id}/reply`, {
+        message: replyMessage
+      });
+      const updatedTicket = res.data;
+      setTickets(tickets.map((t: any) => t._id === updatedTicket._id ? updatedTicket : t));
+      setSelectedTicket(updatedTicket);
+      setReplyMessage('');
+      setSuccessMsg('Reply sent successfully!');
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.error || 'Failed to send reply');
+    } finally {
+      setLoadingReply(false);
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#f8f7f4] text-slate-900 p-4 md:p-8">
@@ -135,8 +193,18 @@ export default function SupportHelpPage() {
                   <label className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Message Description</label>
                   <textarea required value={newTicketMessage} onChange={(e) => setNewTicketMessage(e.target.value)}  rows={4} className="w-full bg-[#f8f7f4] text-slate-900 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 font-medium focus:outline-none focus:border-[#c5a880] focus:ring-1 focus:ring-[#c5a880] resize-none" />
                 </div>
-                <button type="submit" className="w-full bg-slate-900 hover:bg-[#c5a880] text-slate-900 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md">
-                  Submit Ticket
+                <button 
+                  type="submit" 
+                  disabled={loadingTicket}
+                  className="w-full bg-[#c5a880] hover:bg-[#b0936b] text-slate-900 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {loadingTicket ? (
+                    <>
+                      <Loader className="animate-spin w-4 h-4" /> Submitting...
+                    </>
+                  ) : (
+                    'Submit Ticket'
+                  )}
                 </button>
               </form>
             </div>

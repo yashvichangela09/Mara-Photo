@@ -200,6 +200,13 @@ export default function CalendarPage() {
     return day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
   };
 
+  // Check if a day is in the past (before today)
+  const isPastDate = (day: number) => {
+    const cellDate = new Date(currentYear, currentMonth, day);
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return cellDate < todayDate;
+  };
+
   // Upcoming shoots (from today onward, sorted)
   const upcomingShoots = shoots
     .filter((s: any) => new Date(s.date) >= new Date(today.toDateString()))
@@ -396,9 +403,17 @@ export default function CalendarPage() {
                         <span className="cal-day-num">{cell.day}</span>
                         {cell.shoots.length > 0 && (
                           <div className="mt-1 flex flex-col gap-1 w-full overflow-hidden">
-                            {cell.shoots.slice(0, 2).map((s: any, i: number) => (
-                              <span key={i} className="shoot-pill truncate w-full block">{s.eventName || 'Shoot'}</span>
-                            ))}
+                            {cell.shoots.slice(0, 2).map((s: any, i: number) => {
+                              const isPast = isPastDate(cell.day);
+                              return (
+                                <span 
+                                  key={i} 
+                                  className={`shoot-pill truncate w-full block ${isPast ? '!bg-gradient-to-r !from-emerald-500 !to-teal-500 !text-white' : ''}`}
+                                >
+                                  {s.eventName || 'Shoot'}
+                                </span>
+                              );
+                            })}
                             <span className="inline-flex items-center justify-center px-1.5 py-0.5 bg-[#c5a880]/10 text-[#b59a72] text-[9px] font-extrabold rounded w-full mt-0.5 border border-[#c5a880]/20">
                               {cell.shoots.length} {cell.shoots.length === 1 ? 'Work' : 'Works'}
                             </span>
