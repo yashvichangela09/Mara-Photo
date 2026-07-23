@@ -645,7 +645,7 @@ export default function ClientGallery() {
         <div className="max-w-7xl mx-auto px-6 h-22 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {event?.studioId?.logoUrl ? (
-              <img src={event.studioId.logoUrl} alt="Logo" className="h-12 md:h-14 max-w-[200px] object-contain shrink-0" />
+              <img src={event?.studioId?.logoUrl} alt="Logo" className="h-12 md:h-14 max-w-[200px] object-contain shrink-0" />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-sm shadow-sm">M</div>
             )}
@@ -951,7 +951,7 @@ export default function ClientGallery() {
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
               {event?.studioId?.logoUrl ? (
-                <img src={event.studioId.logoUrl} alt="Logo" className="h-10 max-w-[160px] object-contain brightness-125" />
+                <img src={event?.studioId?.logoUrl} alt="Logo" className="h-10 max-w-[160px] object-contain brightness-125" />
               ) : (
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
@@ -985,10 +985,10 @@ export default function ClientGallery() {
                 <span>Facebook</span>
               </a>
             )}
-            {event?.studioId && typeof event.studioId === 'object' && event.studioId.ownerId && typeof event.studioId.ownerId === 'object' && (event.studioId.ownerId as any).phone && (
-              <a href={`tel:${(event.studioId.ownerId as any).phone}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-colors">
+            {event?.studioId && typeof event.studioId === 'object' && (event.studioId as any).ownerId?.phone && (
+              <a href={`tel:${(event.studioId as any).ownerId.phone}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-colors">
                 <Phone className="h-4 w-4 text-[#c5a880]" />
-                <span>{(event.studioId.ownerId as any).phone}</span>
+                <span>{(event.studioId as any).ownerId.phone}</span>
               </a>
             )}
             {event?.location && (
