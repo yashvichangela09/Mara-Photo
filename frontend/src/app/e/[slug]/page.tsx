@@ -151,6 +151,7 @@ export default function ClientGallery() {
   };
 
   useEffect(() => {
+    if (!slug) return;
     if (typeof window !== 'undefined') {
       const guestStatus = localStorage.getItem(`mara_guest_${slug}`);
       if (guestStatus === 'true') {
@@ -461,6 +462,18 @@ export default function ClientGallery() {
     clearSelfie();
     setSearchTab('camera');
   };
+
+  if (loading || !event) {
+    return (
+      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-6 relative overflow-hidden font-poppins text-white">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[#c5a880]/10 rounded-full filter blur-[80px] pointer-events-none" />
+        <div className="flex flex-col items-center gap-4 z-10">
+          <Loader2 className="h-10 w-10 animate-spin text-[#c5a880]" />
+          <span className="text-xs font-bold uppercase tracking-widest text-[#c5a880] animate-pulse">Loading gallery...</span>
+        </div>
+      </div>
+    );
+  }
 
   // 1. Locked Screen
   if (isLocked) {
