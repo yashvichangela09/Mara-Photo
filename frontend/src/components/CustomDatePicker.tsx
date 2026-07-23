@@ -19,7 +19,11 @@ export default function CustomDatePicker({
   required,
   ...props 
 }: CustomDatePickerProps) {
-  
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Convert string value to Date object for react-datepicker
   // Time inputs are usually "HH:mm"
   // Date inputs are usually "YYYY-MM-DD"
@@ -45,6 +49,24 @@ export default function CustomDatePicker({
       onChange(`${year}-${month}-${day}`);
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="relative w-full">
+        <input 
+          type="text" 
+          readOnly 
+          placeholder={type === 'time' ? "Select time" : "Select date"} 
+          className={`${className} !pl-10 cursor-pointer`}
+          value={value}
+          required={required}
+        />
+        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+          {type === 'time' ? <Clock className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full group">
