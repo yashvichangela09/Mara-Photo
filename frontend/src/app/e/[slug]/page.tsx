@@ -473,11 +473,11 @@ export default function ClientGallery() {
             style={{ backgroundImage: `url(${event.coverImageUrl})` }}
           />
         )}
-        
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
 
-        <div className="w-full max-w-5xl flex items-center justify-between py-4 z-10">
+        {/* Header Navigation Bar */}
+        <header className="w-full max-w-6xl mx-auto flex items-center justify-between py-4 px-6 z-10 bg-white/60 backdrop-blur-md border border-[#e3d8c8]/30 rounded-2xl shadow-sm mt-2">
           <div className="flex items-center gap-3">
             {event?.studioId?.logoUrl ? (
               <img src={event.studioId.logoUrl} alt="Studio Logo" className="h-9 max-w-[140px] object-contain" />
@@ -493,7 +493,7 @@ export default function ClientGallery() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3 py-1.5 rounded-full border border-[#c5a880]/20 backdrop-blur-md">
             Protected Gallery
           </span>
-        </div>
+        </header>
 
         <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8]/40 p-8 sm:p-10 rounded-3xl text-center shadow-2xl relative z-10 my-auto">
           <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#c5a880]/20 to-[#c5a880]/5 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-6 text-[#c5a880] shadow-[0_0_20px_rgba(197,168,128,0.2)] animate-pulse">
@@ -544,9 +544,35 @@ export default function ClientGallery() {
           </form>
         </div>
 
-        <div className="py-4 text-center z-10">
-          <p className="text-[11px] text-slate-450 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
-        </div>
+        {/* Footer Bar */}
+        <footer className="w-full max-w-6xl mx-auto py-6 px-6 z-10 bg-white/60 backdrop-blur-md border border-[#e3d8c8]/30 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 mb-2 text-xs text-slate-500 font-bold font-poppins">
+          <div>
+            © {new Date().getFullYear()} {event?.studioId?.name || 'Mara Photo'}. All rights reserved.
+          </div>
+          
+          <div className="flex items-center gap-5">
+            {event?.studioId?.ownerId?.phone && (
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <Phone className="w-3.5 h-3.5 text-[#c5a880]" />
+                {event.studioId.ownerId.phone}
+              </span>
+            )}
+            {event?.studioId?.instagramUrl && (
+              <a href={event.studioId.instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[#c5a880] transition-colors">
+                Instagram
+              </a>
+            )}
+            {event?.studioId?.facebookUrl && (
+              <a href={event.studioId.facebookUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[#c5a880] transition-colors">
+                Facebook
+              </a>
+            )}
+          </div>
+          
+          <div className="text-[10px]">
+            Powered by <span className="text-[#c5a880] font-extrabold tracking-wider">MARA PHOTO</span>
+          </div>
+        </footer>
       </div>
     );
   }
@@ -566,7 +592,8 @@ export default function ClientGallery() {
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
 
-        <div className="w-full max-w-5xl flex items-center justify-between py-4 z-10">
+        {/* Header Navigation Bar */}
+        <header className="w-full max-w-6xl mx-auto flex items-center justify-between py-4 px-6 z-10 bg-white/60 backdrop-blur-md border border-[#e3d8c8]/30 rounded-2xl shadow-sm mt-2">
           <div className="flex items-center gap-3">
             {event?.studioId?.logoUrl ? (
               <img src={event.studioId.logoUrl} alt="Studio Logo" className="h-9 max-w-[140px] object-contain" />
@@ -582,7 +609,7 @@ export default function ClientGallery() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3 py-1.5 rounded-full border border-[#c5a880]/20 backdrop-blur-md">
             Guest Access
           </span>
-        </div>
+        </header>
 
         <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8]/40 p-8 sm:p-10 rounded-3xl text-center shadow-2xl relative z-10 my-auto">
           <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#c5a880]/20 to-[#c5a880]/5 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-4 text-[#c5a880] shadow-[0_0_20px_rgba(197,168,128,0.2)] animate-pulse">
@@ -657,9 +684,35 @@ export default function ClientGallery() {
           </form>
         </div>
 
-        <div className="py-4 text-center z-10">
-          <p className="text-[11px] text-slate-450 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
-        </div>
+        {/* Footer Bar */}
+        <footer className="w-full max-w-6xl mx-auto py-6 px-6 z-10 bg-white/60 backdrop-blur-md border border-[#e3d8c8]/30 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 mb-2 text-xs text-slate-500 font-bold font-poppins">
+          <div>
+            © {new Date().getFullYear()} {event?.studioId?.name || 'Mara Photo'}. All rights reserved.
+          </div>
+          
+          <div className="flex items-center gap-5">
+            {event?.studioId?.ownerId?.phone && (
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <Phone className="w-3.5 h-3.5 text-[#c5a880]" />
+                {event.studioId.ownerId.phone}
+              </span>
+            )}
+            {event?.studioId?.instagramUrl && (
+              <a href={event.studioId.instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[#c5a880] transition-colors">
+                Instagram
+              </a>
+            )}
+            {event?.studioId?.facebookUrl && (
+              <a href={event.studioId.facebookUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[#c5a880] transition-colors">
+                Facebook
+              </a>
+            )}
+          </div>
+          
+          <div className="text-[10px]">
+            Powered by <span className="text-[#c5a880] font-extrabold tracking-wider">MARA PHOTO</span>
+          </div>
+        </footer>
       </div>
     );
   }
