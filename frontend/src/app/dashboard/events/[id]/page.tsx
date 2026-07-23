@@ -72,52 +72,68 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
     setUploadProgress({ current: 0, total: filesToUpload.length });
     
     try {
-      const chunkSize = 1;
+      const CONCURRENCY_LIMIT = 4;
       let uploadedCount = 0;
       let successful = 0;
       let failed = 0;
       
       const imageCompression = (await import('browser-image-compression')).default;
 
-      for (let i = 0; i < filesToUpload.length; i += chunkSize) {
-        const chunk = filesToUpload.slice(i, i + chunkSize);
-        const formData = new FormData();
+      // Function to process and upload a single file
+      const uploadSingleFile = async (file: File) => {
+        let fileToUpload: File | Blob = file;
         
-        for (const file of chunk) {
-          let fileToUpload: File | Blob = file;
-          
-          if (file.type.startsWith('image/') && compress) {
-            try {
-              const options = {
-                maxSizeMB: (quality / 100) * 3,
-                maxWidthOrHeight: 2500,
-                useWebWorker: true,
-                alwaysKeepResolution: true
-              };
-              const compressedBlob = await imageCompression(file, options);
-              // Maintain original filename
-              fileToUpload = new File([compressedBlob], file.name, { type: compressedBlob.type });
-            } catch (err) {
-              console.error('Compression skipped:', err);
-            }
+        if (file.type.startsWith('image/') && compress) {
+          try {
+            const options = {
+              maxSizeMB: (quality / 100) * 3,
+              maxWidthOrHeight: 2500,
+              useWebWorker: true,
+              alwaysKeepResolution: true
+            };
+            const compressedBlob = await imageCompression(file, options);
+            fileToUpload = new File([compressedBlob], file.name, { type: compressedBlob.type });
+          } catch (err) {
+            console.error('Compression skipped:', err);
           }
-
-          formData.append('files', fileToUpload);
-          formData.append('folderPaths', file.webkitRelativePath || '');
         }
-        
+
+        const formData = new FormData();
+        formData.append('files', fileToUpload);
+        formData.append('folderPaths', file.webkitRelativePath || '');
+
         try {
           await apiClient.post(`/media/event/${event._id}/upload?compress=${compress}&quality=${quality}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
-          successful += chunk.length;
+          successful++;
         } catch (err) {
-          failed += chunk.length;
+          failed++;
         }
         
-        uploadedCount += chunk.length;
+        uploadedCount++;
         setUploadProgress({ current: uploadedCount, total: filesToUpload.length });
+      };
+
+      // Run parallel workers to process the queue
+      const queue = [...filesToUpload];
+      const workers = [];
+      
+      const worker = async () => {
+        while (queue.length > 0) {
+          const file = queue.shift();
+          if (file) {
+            await uploadSingleFile(file);
+          }
+        }
+      };
+
+      // Start concurrent worker threads
+      for (let w = 0; w < Math.min(CONCURRENCY_LIMIT, filesToUpload.length); w++) {
+        workers.push(worker());
       }
+      
+      await Promise.all(workers);
       
       if (failed > 0) {
         toast.error(`Uploaded ${successful}, failed ${failed}`);
