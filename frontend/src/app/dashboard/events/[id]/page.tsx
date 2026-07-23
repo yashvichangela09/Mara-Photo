@@ -17,7 +17,14 @@ export default function EventUploadPage() {
   const [showGalleryLink, setShowGalleryLink] = useState(false);
   const [hasSavedDetails, setHasSavedDetails] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [galleryUrl, setGalleryUrl] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && event?.code) {
+      setGalleryUrl(`${window.location.origin}/e/${event.code}`);
+    }
+  }, [event?.code]);
 
   const folderInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -1042,13 +1049,13 @@ export default function EventUploadPage() {
                           <input 
                             type="text" 
                             readOnly 
-                            value={`${window.location.origin}/e/${event.code}`} 
+                            value={galleryUrl} 
                             className="flex-1 bg-transparent text-[11px] sm:text-xs text-slate-700 font-semibold px-3 py-3 outline-none"
                           />
                           <button
                             type="button"
                             onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/e/${event.code}`);
+                              navigator.clipboard.writeText(galleryUrl);
                               setLinkCopied(true);
                               setTimeout(() => setLinkCopied(false), 2000);
                             }}
