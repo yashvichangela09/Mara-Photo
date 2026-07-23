@@ -137,6 +137,19 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  // Prevent leaving the page during upload or delete
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (uploadingMedia || deletingMedia) {
+        e.preventDefault();
+        e.returnValue = 'Upload or deletion is in progress. Leaving this page will cancel the process. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [uploadingMedia, deletingMedia]);
+
   // Auto-refresh if any media is PENDING
   useEffect(() => {
     const hasPending = mediaItems.some(item => item.processedStatus === 'PENDING' || item.processedStatus === 'PROCESSING');
@@ -410,27 +423,67 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
             </div>
             
             {uploadingMedia && (
-               <div className="mb-6 bg-[#f8f7f4] text-slate-900 border border-slate-200 rounded-xl p-4">
-                  <div className="flex justify-between text-xs font-bold text-slate-600 mb-2">
-                     <span>Uploading files to secure cloud storage...</span>
-                     <span>{uploadProgress.current} / {uploadProgress.total}</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                     <div className="bg-[#c5a880] h-2 rounded-full transition-all duration-300" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}></div>
-                  </div>
-               </div>
-            )}
+                <div className="fixed inset-0 bg-[#09090b]/80 backdrop-blur-md z-[9999] flex items-center justify-center p-6">
+                   <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center border border-slate-100 relative overflow-hidden animate-in fade-in zoom-in duration-200">
+                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#c5a880] to-[#e5cda8] animate-pulse" />
+                      
+                      <div className="w-16 h-16 bg-[#c5a880]/10 border border-[#c5a880]/20 rounded-full flex items-center justify-center mx-auto mb-6 text-[#c5a880]">
+                         <Loader2 className="w-8 h-8 animate-spin" />
+                      </div>
 
-            {deletingMedia && (
-                <div className="mb-6 bg-red-50 text-slate-900 border border-red-150 rounded-xl p-4">
-                   <div className="flex justify-between text-xs font-bold text-red-700 mb-2 items-center">
-                      <span className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-red-500" />
-                        Deleting selected files from secure cloud storage...
-                      </span>
+                      <h3 className="text-xl font-extrabold text-[#09090b] tracking-tight">Uploading Media Files</h3>
+                      <p className="text-xs text-slate-500 font-semibold mt-2 mb-6">
+                         Please do not close this tab or navigate away.<br />
+                         Leaving this page will cancel the upload process.
+                      </p>
+
+                      <div className="bg-[#f8f7f4] border border-slate-200 rounded-2xl p-4 mb-2">
+                         <div className="flex justify-between text-xs font-extrabold text-slate-600 mb-2">
+                            <span>Uploading to secure cloud storage...</span>
+                            <span className="text-[#c5a880]">{uploadProgress.current} / {uploadProgress.total}</span>
+                         </div>
+                         <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div 
+                               className="bg-[#c5a880] h-2 rounded-full transition-all duration-300" 
+                               style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                            />
+                         </div>
+                      </div>
+                      
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">
+                         Processing files...
+                      </div>
                    </div>
-                   <div className="w-full bg-red-100 rounded-full h-2 overflow-hidden">
-                      <div className="bg-red-500 h-2 rounded-full w-full animate-pulse"></div>
+                </div>
+             )}
+
+             {deletingMedia && (
+                <div className="fixed inset-0 bg-[#09090b]/80 backdrop-blur-md z-[9999] flex items-center justify-center p-6">
+                   <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center border border-slate-100 relative overflow-hidden animate-in fade-in zoom-in duration-200">
+                      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-600 to-rose-400 animate-pulse" />
+                      
+                      <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-full flex items-center justify-center mx-auto mb-6 text-red-600">
+                         <Loader2 className="w-8 h-8 animate-spin" />
+                      </div>
+
+                      <h3 className="text-xl font-extrabold text-[#09090b] tracking-tight">Deleting Media Files</h3>
+                      <p className="text-xs text-slate-500 font-semibold mt-2 mb-6">
+                         Please do not close this tab or navigate away.<br />
+                         Leaving this page will cancel the deletion process.
+                      </p>
+
+                      <div className="bg-red-50/50 border border-red-100 rounded-2xl p-4 mb-2">
+                         <div className="flex justify-between text-xs font-extrabold text-red-700 mb-2">
+                            <span>Deleting from secure cloud storage...</span>
+                         </div>
+                         <div className="w-full bg-red-100 rounded-full h-2 overflow-hidden">
+                            <div className="bg-red-500 h-2 rounded-full w-full animate-pulse" />
+                         </div>
+                      </div>
+                      
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">
+                         Updating catalog...
+                      </div>
                    </div>
                 </div>
              )}
