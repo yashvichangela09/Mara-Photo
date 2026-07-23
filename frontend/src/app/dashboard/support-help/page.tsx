@@ -103,12 +103,12 @@ export default function SupportHelpPage() {
             <h1 className="font-serif-luxury text-4xl sm:text-5xl font-light tracking-tight">
               Studio <span className="italic text-[#c5a880]">Help Desk</span>
             </h1>
-            <p className="text-gray-400 text-sm sm:text-base leading-relaxed font-poppins font-medium">
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-poppins font-semibold">
               Get fast responses, expert guidance, and reliable solutions from our dedicated support team.
             </p>
 
             {/* Badges row */}
-            <div className="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs md:text-sm font-bold uppercase tracking-wider text-gray-300 font-poppins">
+            <div className="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs md:text-sm font-bold uppercase tracking-wider text-slate-600 font-poppins">
               <div className="flex items-center gap-2">
                 <Shield className="w-4.5 h-4.5 text-[#c5a880]" />
                 <span>Priority Support</span>
