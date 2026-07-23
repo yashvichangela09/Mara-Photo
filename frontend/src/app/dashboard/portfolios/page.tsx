@@ -134,7 +134,7 @@ export default function PortfoliosPage() {
                   </div>
 
                   <div className="relative z-10 mt-auto">
-                    <h3 className="text-xl font-bold text-slate-900 mb-4 line-clamp-2 leading-tight">{event.name}</h3>
+                    <h3 className="text-lg font-bold text-white group-hover:text-[#c5a880] mb-4 line-clamp-2 leading-tight transition-colors">{event.name}</h3>
                     
                     <div className="h-[1px] w-full bg-white/20" />
                   </div>
