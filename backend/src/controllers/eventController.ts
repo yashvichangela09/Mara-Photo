@@ -188,7 +188,7 @@ export const getEventByCode = async (req: Request, res: Response) => {
     const event = await Event.findOne({ code })
       .populate({
         path: 'studioId',
-        select: 'name logoUrl watermark customDomain subdomain ownerId paymentDetails',
+        select: 'name logoUrl watermark customDomain subdomain ownerId paymentDetails instagramUrl facebookUrl',
         populate: { path: 'ownerId', select: 'email phone name' }
       });
     
