@@ -465,7 +465,7 @@ export default function ClientGallery() {
   // 1. Locked Screen
   if (isLocked) {
     return (
-      <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-between p-6 relative overflow-hidden font-poppins">
+      <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-center p-6 relative overflow-hidden font-poppins">
         {/* Ambient Blur Cover Image Background */}
         {event?.coverImageUrl && (
           <div 
@@ -476,36 +476,7 @@ export default function ClientGallery() {
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
 
-        {/* Black Header Navigation Bar */}
-        <header className="w-full max-w-7xl mx-auto flex items-center justify-between py-4 px-6 z-10 bg-[#09090b]/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg mt-2">
-          <div className="flex items-center gap-3">
-            {event?.studioId?.logoUrl ? (
-              <img src={event.studioId.logoUrl} alt="Studio Logo" className="h-10 md:h-12 max-w-[160px] object-contain shrink-0" />
-            ) : (
-              <div className="w-8 h-8 rounded-lg bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
-            )}
-            <div className="flex flex-col text-left">
-              <span className="font-extrabold text-sm md:text-base text-white tracking-wider uppercase">
-                {event?.studioId?.name || 'Mara Photo'}
-              </span>
-              <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase">Official Gallery</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3.5 py-1.5 rounded-full border border-[#c5a880]/20">
-              {event?.type || 'WEDDING'}
-            </span>
-            {event?.date && (
-              <span className="text-xs font-bold text-slate-300 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
-                <Calendar className="h-4 w-4 text-[#c5a880]" />
-                {new Date(event.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-              </span>
-            )}
-          </div>
-        </header>
-
-        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8]/40 p-8 sm:p-10 rounded-3xl text-center shadow-2xl relative z-10 my-auto">
+        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8]/40 p-8 sm:p-10 rounded-3xl text-center shadow-2xl relative z-10">
           <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#c5a880]/20 to-[#c5a880]/5 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-6 text-[#c5a880] shadow-[0_0_20px_rgba(197,168,128,0.2)] animate-pulse">
             <Lock className="h-6 w-6 text-[#c5a880]" />
           </div>
@@ -553,63 +524,6 @@ export default function ClientGallery() {
             </div>
           </form>
         </div>
-
-        {/* Black Footer Bar */}
-        <footer className="w-full max-w-7xl mx-auto py-8 px-8 z-10 bg-[#09090b]/95 backdrop-blur-md border border-white/10 rounded-3xl shadow-lg flex flex-col gap-6 mb-2">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="flex flex-col gap-2 max-w-sm text-left">
-              {event?.studioId?.logoUrl ? (
-                <img src={event.studioId.logoUrl} alt="Logo" className="h-9 max-w-[150px] object-contain self-start" />
-              ) : (
-                <span className="font-extrabold text-white text-sm uppercase">{event?.studioId?.name || 'Mara Photo'}</span>
-              )}
-              <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
-                Capturing timeless memories with AI-powered gallery distribution & high-resolution delivery.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-4">
-              {event?.studioId?.instagramUrl && (
-                <a href={event.studioId.instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl text-xs text-slate-300 font-semibold transition-all">
-                  <svg className="w-4 h-4 fill-none stroke-current text-[#c5a880]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                  </svg>
-                  <span>Instagram</span>
-                </a>
-              )}
-              {event?.studioId?.facebookUrl && (
-                <a href={event.studioId.facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl text-xs text-slate-300 font-semibold transition-all">
-                  <svg className="w-4 h-4 fill-none stroke-current text-[#c5a880]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                  </svg>
-                  <span>Facebook</span>
-                </a>
-              )}
-              {event?.studioId?.ownerId?.phone && (
-                <a href={`tel:${event.studioId.ownerId.phone}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl text-xs text-slate-300 font-semibold transition-all">
-                  <Phone className="h-4 w-4 text-[#c5a880]" />
-                  <span>{event.studioId.ownerId.phone}</span>
-                </a>
-              )}
-              {event?.location && (
-                <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-xs text-slate-300 font-semibold">
-                  <MapPin className="h-4 w-4 text-[#c5a880]" />
-                  <span>{event.location}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 pt-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500 font-semibold">
-            <p>© {new Date().getFullYear()} {event?.studioId?.name || 'Mara Photo'}. All rights reserved.</p>
-            <p className="flex items-center gap-1">
-              <span>Delivered with passion via</span>
-              <span className="text-[#c5a880] font-extrabold">Mara Photo AI Gallery</span>
-            </p>
-          </div>
-        </footer>
       </div>
     );
   }
@@ -617,7 +531,7 @@ export default function ClientGallery() {
   // 2. Guest Sign-In Page
   if (!isGuest && !isLocked) {
     return (
-      <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-between p-6 relative overflow-hidden font-poppins">
+      <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-center p-6 relative overflow-hidden font-poppins">
         {/* Ambient Blur Cover Image Background */}
         {event?.coverImageUrl && (
           <div 
@@ -629,36 +543,7 @@ export default function ClientGallery() {
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
 
-        {/* Black Header Navigation Bar */}
-        <header className="w-full max-w-7xl mx-auto flex items-center justify-between py-4 px-6 z-10 bg-[#09090b]/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg mt-2">
-          <div className="flex items-center gap-3">
-            {event?.studioId?.logoUrl ? (
-              <img src={event.studioId.logoUrl} alt="Studio Logo" className="h-10 md:h-12 max-w-[160px] object-contain shrink-0" />
-            ) : (
-              <div className="w-8 h-8 rounded-lg bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-xs">M</div>
-            )}
-            <div className="flex flex-col text-left">
-              <span className="font-extrabold text-sm md:text-base text-white tracking-wider uppercase">
-                {event?.studioId?.name || 'Mara Photo'}
-              </span>
-              <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase">Official Gallery</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3.5 py-1.5 rounded-full border border-[#c5a880]/20">
-              {event?.type || 'WEDDING'}
-            </span>
-            {event?.date && (
-              <span className="text-xs font-bold text-slate-300 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
-                <Calendar className="h-4 w-4 text-[#c5a880]" />
-                {new Date(event.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-              </span>
-            )}
-          </div>
-        </header>
-
-        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8]/40 p-8 sm:p-10 rounded-3xl text-center shadow-2xl relative z-10 my-auto">
+        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8]/40 p-8 sm:p-10 rounded-3xl text-center shadow-2xl relative z-10">
           <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#c5a880]/20 to-[#c5a880]/5 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-4 text-[#c5a880] shadow-[0_0_20px_rgba(197,168,128,0.2)] animate-pulse">
             <User className="h-6 w-6 text-[#c5a880]" />
           </div>
@@ -730,63 +615,6 @@ export default function ClientGallery() {
             </button>
           </form>
         </div>
-
-        {/* Black Footer Bar */}
-        <footer className="w-full max-w-7xl mx-auto py-8 px-8 z-10 bg-[#09090b]/95 backdrop-blur-md border border-white/10 rounded-3xl shadow-lg flex flex-col gap-6 mb-2">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="flex flex-col gap-2 max-w-sm text-left">
-              {event?.studioId?.logoUrl ? (
-                <img src={event.studioId.logoUrl} alt="Logo" className="h-9 max-w-[150px] object-contain self-start" />
-              ) : (
-                <span className="font-extrabold text-white text-sm uppercase">{event?.studioId?.name || 'Mara Photo'}</span>
-              )}
-              <p className="text-[11px] text-slate-400 font-medium leading-relaxed mt-1">
-                Capturing timeless memories with AI-powered gallery distribution & high-resolution delivery.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-4">
-              {event?.studioId?.instagramUrl && (
-                <a href={event.studioId.instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl text-xs text-slate-300 font-semibold transition-all">
-                  <svg className="w-4 h-4 fill-none stroke-current text-[#c5a880]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                  </svg>
-                  <span>Instagram</span>
-                </a>
-              )}
-              {event?.studioId?.facebookUrl && (
-                <a href={event.studioId.facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl text-xs text-slate-300 font-semibold transition-all">
-                  <svg className="w-4 h-4 fill-none stroke-current text-[#c5a880]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                  </svg>
-                  <span>Facebook</span>
-                </a>
-              )}
-              {event?.studioId?.ownerId?.phone && (
-                <a href={`tel:${event.studioId.ownerId.phone}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl text-xs text-slate-300 font-semibold transition-all">
-                  <Phone className="h-4 w-4 text-[#c5a880]" />
-                  <span>{event.studioId.ownerId.phone}</span>
-                </a>
-              )}
-              {event?.location && (
-                <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-xs text-slate-300 font-semibold">
-                  <MapPin className="h-4 w-4 text-[#c5a880]" />
-                  <span>{event.location}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 pt-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500 font-semibold">
-            <p>© {new Date().getFullYear()} {event?.studioId?.name || 'Mara Photo'}. All rights reserved.</p>
-            <p className="flex items-center gap-1">
-              <span>Delivered with passion via</span>
-              <span className="text-[#c5a880] font-extrabold">Mara Photo AI Gallery</span>
-            </p>
-          </div>
-        </footer>
       </div>
     );
   }
