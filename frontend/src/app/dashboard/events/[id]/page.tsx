@@ -175,13 +175,13 @@ export default function EventUploadPage() {
 
   // Auto-refresh if any media is PENDING
   useEffect(() => {
-    const hasPending = mediaItems.some(item => item.processedStatus === 'PENDING' || item.processedStatus === 'PROCESSING');
+    const hasPending = (mediaItems || []).filter(Boolean).some(item => item.processedStatus === 'PENDING' || item.processedStatus === 'PROCESSING');
     if (!hasPending || !event?._id) return;
 
     const interval = setInterval(() => {
       apiClient.get(`/media/event/${event._id}`).then(res => {
         if (res.data && res.data.media) {
-          setMediaItems(res.data.media);
+          setMediaItems(res.data.media || []);
         }
       }).catch(err => console.error('Polling error', err));
     }, 3000);
@@ -193,13 +193,14 @@ export default function EventUploadPage() {
   useEffect(() => {
     if (!selectedItem) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      const selectedIndex = mediaItems.findIndex(m => m._id === selectedItem._id);
+      const selectedIndex = (mediaItems || []).filter(Boolean).findIndex(m => m?._id === selectedItem?._id);
       if (selectedIndex === -1) return;
       
+      const activeMedia = (mediaItems || []).filter(Boolean);
       if (e.key === 'ArrowLeft' && selectedIndex > 0) {
-        setSelectedItem(mediaItems[selectedIndex - 1]);
-      } else if (e.key === 'ArrowRight' && selectedIndex < mediaItems.length - 1) {
-        setSelectedItem(mediaItems[selectedIndex + 1]);
+        setSelectedItem(activeMedia[selectedIndex - 1]);
+      } else if (e.key === 'ArrowRight' && selectedIndex < activeMedia.length - 1) {
+        setSelectedItem(activeMedia[selectedIndex + 1]);
       } else if (e.key === 'Escape') {
         setSelectedItem(null);
       }
@@ -279,7 +280,7 @@ export default function EventUploadPage() {
       await apiClient.delete(`/media/event/${event._id}/media`, {
         data: { mediaIds: selectedMediaIds }
       });
-      setMediaItems(mediaItems.filter(item => !selectedMediaIds.includes(item._id)));
+      setMediaItems((mediaItems || []).filter(item => item && !selectedMediaIds.includes(item._id)));
       setSelectedMediaIds([]);
       setSelectMode(false);
       toast.success('Selected files deleted successfully');
@@ -295,7 +296,7 @@ export default function EventUploadPage() {
     if (!window.confirm('Are you sure you want to delete this file?')) return;
     try {
       await apiClient.delete(`/media/${mediaId}`);
-      setMediaItems(mediaItems.filter(item => item._id !== mediaId));
+      setMediaItems((mediaItems || []).filter(item => item && item._id !== mediaId));
       setSelectedItem(null);
       toast.success('Media file deleted successfully');
     } catch (err) {
