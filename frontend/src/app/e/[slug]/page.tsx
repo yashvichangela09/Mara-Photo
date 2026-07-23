@@ -466,8 +466,16 @@ export default function ClientGallery() {
   if (isLocked) {
     return (
       <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-between p-6 relative overflow-hidden font-poppins">
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
+        {/* Ambient Blur Cover Image Background */}
+        {event?.coverImageUrl && (
+          <div 
+            className="absolute inset-0 z-0 bg-cover bg-center filter blur-3xl scale-110 opacity-30 pointer-events-none brightness-95"
+            style={{ backgroundImage: `url(${event.coverImageUrl})` }}
+          />
+        )}
+        
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
 
         <div className="w-full max-w-5xl flex items-center justify-between py-4 z-10">
           <div className="flex items-center gap-3">
@@ -482,13 +490,13 @@ export default function ClientGallery() {
               </div>
             )}
           </div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3 py-1.5 rounded-full border border-[#c5a880]/20">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3 py-1.5 rounded-full border border-[#c5a880]/20 backdrop-blur-md">
             Protected Gallery
           </span>
         </div>
 
-        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8] p-8 sm:p-10 rounded-3xl text-center shadow-xl relative z-10 my-auto">
-          <div className="w-14 h-14 rounded-2xl bg-[#c5a880]/15 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-6 text-[#c5a880]">
+        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8]/40 p-8 sm:p-10 rounded-3xl text-center shadow-2xl relative z-10 my-auto">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#c5a880]/20 to-[#c5a880]/5 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-6 text-[#c5a880] shadow-[0_0_20px_rgba(197,168,128,0.2)] animate-pulse">
             <Lock className="h-6 w-6 text-[#c5a880]" />
           </div>
           <h2 className="text-2xl font-extrabold text-[#09090b] tracking-tight">{event?.name || 'Private Event'}</h2>
@@ -512,24 +520,24 @@ export default function ClientGallery() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter event password"
-                className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl pl-11 pr-12 py-3.5 text-sm font-semibold text-[#09090b] placeholder:text-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white text-center tracking-wider transition-all"
+                className="w-full bg-[#faf9f6] border border-[#e3d8c8]/60 focus:border-[#c5a880] rounded-xl pl-11 pr-12 py-3.5 text-sm font-semibold text-[#09090b] placeholder:text-slate-400 focus:outline-none focus:bg-white text-center tracking-wider transition-all focus:ring-1 focus:ring-[#c5a880]"
               />
               <button
                 type="button"
                 onClick={() => setShowEventPassword(!showEventPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650"
               >
-                {showEventPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showEventPassword ? <EyeOff className="h-4 w-4 text-[#c5a880]" /> : <Eye className="h-4 w-4 text-[#c5a880]" />}
               </button>
             </div>
             <button
               type="submit"
-              className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-lg"
+              className="bg-[#c5a880] hover:bg-[#b0936b] text-[#09090b] font-extrabold py-3.5 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md hover:shadow-lg cursor-pointer"
             >
               Unlock Gallery
             </button>
             <div className="text-center mt-1">
-              <span className="text-[11px] text-slate-400 hover:text-[#c5a880] cursor-help font-semibold transition-colors">
+              <span className="text-[11px] text-slate-450 hover:text-[#c5a880] cursor-help font-semibold transition-colors">
                 Forgot password?
               </span>
             </div>
@@ -537,7 +545,7 @@ export default function ClientGallery() {
         </div>
 
         <div className="py-4 text-center z-10">
-          <p className="text-[11px] text-slate-400 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
+          <p className="text-[11px] text-slate-450 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
         </div>
       </div>
     );
@@ -547,8 +555,16 @@ export default function ClientGallery() {
   if (!isGuest && !isLocked) {
     return (
       <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col items-center justify-between p-6 relative overflow-hidden font-poppins">
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/10 blur-3xl pointer-events-none" />
+        {/* Ambient Blur Cover Image Background */}
+        {event?.coverImageUrl && (
+          <div 
+            className="absolute inset-0 z-0 bg-cover bg-center filter blur-3xl scale-110 opacity-30 pointer-events-none brightness-95"
+            style={{ backgroundImage: `url(${event.coverImageUrl})` }}
+          />
+        )}
+        
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#c5a880]/15 blur-3xl pointer-events-none" />
 
         <div className="w-full max-w-5xl flex items-center justify-between py-4 z-10">
           <div className="flex items-center gap-3">
@@ -563,17 +579,17 @@ export default function ClientGallery() {
               </div>
             )}
           </div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3 py-1.5 rounded-full border border-[#c5a880]/20">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#c5a880] bg-[#c5a880]/10 px-3 py-1.5 rounded-full border border-[#c5a880]/20 backdrop-blur-md">
             Guest Access
           </span>
         </div>
 
-        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8] p-8 sm:p-10 rounded-3xl text-center shadow-xl relative z-10 my-auto">
-          <div className="w-14 h-14 rounded-2xl bg-[#c5a880]/15 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-6 text-[#c5a880]">
+        <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-[#e3d8c8]/40 p-8 sm:p-10 rounded-3xl text-center shadow-2xl relative z-10 my-auto">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#c5a880]/20 to-[#c5a880]/5 border border-[#c5a880]/30 flex items-center justify-center mx-auto mb-4 text-[#c5a880] shadow-[0_0_20px_rgba(197,168,128,0.2)] animate-pulse">
             <User className="h-6 w-6 text-[#c5a880]" />
           </div>
           
-          <span className="text-[10px] font-extrabold tracking-widest text-[#c5a880] uppercase bg-[#f5f2eb] px-3 py-1 rounded-full border border-[#e3d8c8] inline-block mb-3">
+          <span className="text-[10px] font-extrabold tracking-widest text-[#c5a880] uppercase bg-[#f5f2eb] px-3 py-1 rounded-full border border-[#e3d8c8]/40 inline-block mb-3">
             {event?.type || 'EVENT'}
           </span>
           <h2 className="text-2xl font-extrabold text-[#09090b] tracking-tight">{event?.name || 'Event Gallery'}</h2>
@@ -588,7 +604,7 @@ export default function ClientGallery() {
                   required
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
-                  className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl px-4 py-3 pl-10 text-sm font-semibold text-[#09090b] placeholder-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white transition-all"
+                  className="w-full bg-[#faf9f6] border border-[#e3d8c8]/60 focus:border-[#c5a880] rounded-xl px-4 py-3 pl-10 text-sm font-semibold text-[#09090b] placeholder-slate-400 focus:outline-none focus:bg-white transition-all focus:ring-1 focus:ring-[#c5a880]"
                   placeholder="John Doe"
                 />
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c5a880]" />
@@ -603,7 +619,7 @@ export default function ClientGallery() {
                   required
                   value={guestPhone}
                   onChange={(e) => setGuestPhone(e.target.value)}
-                  className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl px-4 py-3 pl-10 text-sm font-semibold text-[#09090b] placeholder-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white transition-all"
+                  className="w-full bg-[#faf9f6] border border-[#e3d8c8]/60 focus:border-[#c5a880] rounded-xl px-4 py-3 pl-10 text-sm font-semibold text-[#09090b] placeholder-slate-400 focus:outline-none focus:bg-white transition-all focus:ring-1 focus:ring-[#c5a880]"
                   placeholder="+91 9876543210"
                 />
                 <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c5a880]" />
@@ -617,7 +633,7 @@ export default function ClientGallery() {
                   type="email" 
                   value={guestEmail}
                   onChange={(e) => setGuestEmail(e.target.value)}
-                  className="w-full bg-[#faf9f6] border border-[#e3d8c8] rounded-xl px-4 py-3 pl-10 text-sm font-semibold text-[#09090b] placeholder-slate-400 focus:outline-none focus:border-[#c5a880] focus:bg-white transition-all"
+                  className="w-full bg-[#faf9f6] border border-[#e3d8c8]/60 focus:border-[#c5a880] rounded-xl px-4 py-3 pl-10 text-sm font-semibold text-[#09090b] placeholder-slate-400 focus:outline-none focus:bg-white transition-all focus:ring-1 focus:ring-[#c5a880]"
                   placeholder="john@example.com"
                 />
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c5a880]" />
@@ -634,7 +650,7 @@ export default function ClientGallery() {
             <button 
               type="submit" 
               disabled={guestSubmitting}
-              className="mt-4 bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-lg w-full flex justify-center items-center gap-2 disabled:opacity-50"
+              className="mt-4 bg-[#c5a880] hover:bg-[#b0936b] text-[#09090b] font-extrabold py-3.5 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md hover:shadow-lg w-full flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {guestSubmitting ? <Loader2 className="w-4 h-4 animate-spin text-[#09090b]" /> : 'Enter Gallery'}
             </button>
@@ -642,7 +658,7 @@ export default function ClientGallery() {
         </div>
 
         <div className="py-4 text-center z-10">
-          <p className="text-[11px] text-slate-400 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
+          <p className="text-[11px] text-slate-450 font-semibold">Powered by <span className="text-[#c5a880] font-bold">Mara Photo</span></p>
         </div>
       </div>
     );
