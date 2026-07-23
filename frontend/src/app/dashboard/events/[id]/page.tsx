@@ -33,6 +33,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
 
   const [mediaItems, setMediaItems] = useState<any[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [deletingMedia, setDeletingMedia] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -219,7 +220,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
     if (selectedMediaIds.length === 0) return;
     if (!window.confirm(`Are you sure you want to delete the ${selectedMediaIds.length} selected files?`)) return;
     try {
-      setUploadingMedia(true);
+      setDeletingMedia(true);
       await apiClient.delete(`/media/event/${event._id}/media`, {
         data: { mediaIds: selectedMediaIds }
       });
@@ -231,7 +232,7 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
       console.error(err);
       toast.error('Failed to delete selected files');
     } finally {
-      setUploadingMedia(false);
+      setDeletingMedia(false);
     }
   };
 
@@ -419,6 +420,20 @@ export default function EventUploadPage({ params }: { params: Promise<{ id: stri
                   </div>
                </div>
             )}
+
+            {deletingMedia && (
+                <div className="mb-6 bg-red-50 text-slate-900 border border-red-150 rounded-xl p-4">
+                   <div className="flex justify-between text-xs font-bold text-red-700 mb-2 items-center">
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-red-500" />
+                        Deleting selected files from secure cloud storage...
+                      </span>
+                   </div>
+                   <div className="w-full bg-red-100 rounded-full h-2 overflow-hidden">
+                      <div className="bg-red-500 h-2 rounded-full w-full animate-pulse"></div>
+                   </div>
+                </div>
+             )}
 
             {mediaItems.length === 0 ? (
                <div className="bg-[#f8f7f4] text-slate-900 border border-slate-200 rounded-2xl p-12 flex items-center justify-center text-slate-500 text-sm">
