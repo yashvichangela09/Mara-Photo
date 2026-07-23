@@ -6,7 +6,7 @@ import {
   ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, 
   Settings, Camera, Trash2, Loader2, Check, Copy, ZoomIn, Play, ShieldCheck, RefreshCw, ScanFace, 
   ChevronRight, ChevronLeft, LayoutGrid, Sliders, X, Download, Loader, Sparkles, CalendarDays, 
-  Lock, Key, AlertCircle, Search, Eye, EyeOff 
+  Lock, Key, AlertCircle, Search, Eye, EyeOff, Instagram, Facebook
 } from 'lucide-react';
 import JSZip from 'jszip';
 import confetti from 'canvas-confetti';
@@ -687,41 +687,69 @@ export default function ClientGallery() {
         </div>
       </header>
 
-      {/* Clear Cover Hero Presentation */}
-      <div className="relative w-full bg-[#09090b] text-white py-14 sm:py-20 px-6 overflow-hidden">
-        {event?.coverImageUrl ? (
-          <img src={event.coverImageUrl} alt="Cover" className="absolute inset-0 w-full h-full object-cover opacity-65 scale-100 transition-all duration-700" />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-[#1a1714] to-[#09090b] opacity-90" />
+      {/* Beautiful Luxury Cover Hero Section */}
+      <div className="relative w-full bg-[#0d0c0a] text-white py-12 md:py-20 overflow-hidden border-b border-[#c5a880]/20">
+        {/* Soft background ambient light */}
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[500px] h-[500px] bg-[#c5a880]/15 rounded-full filter blur-[120px] pointer-events-none" />
+        {event?.coverImageUrl && (
+          <>
+            {/* Blurry background backdrop */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center opacity-20 filter blur-2xl scale-110 pointer-events-none"
+              style={{ backgroundImage: `url(${event.coverImageUrl})` }}
+            />
+            {/* Dark overlay */}
+            <div className="absolute inset-0 bg-[#0d0c0a]/80" />
+          </>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent" />
-
-        <div className="relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="flex flex-col items-start gap-3.5 max-w-2xl">
-            <span className="text-[10px] uppercase font-black tracking-widest bg-[#c5a880] text-[#09090b] px-3.5 py-1.5 rounded-full shadow-md">
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Details Column */}
+          <div className="lg:col-span-7 flex flex-col items-start gap-4">
+            <span className="text-[10px] uppercase font-bold tracking-widest bg-gradient-to-r from-[#c5a880] to-[#e5cda8] text-[#0d0c0a] px-4 py-1.5 rounded-full shadow-md font-poppins">
               {event?.type || 'EVENT GALLERY'}
             </span>
-
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white drop-shadow-lg">
+            
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-none">
               {event?.name}
             </h1>
+            
+            <p className="text-slate-400 text-xs sm:text-sm max-w-lg font-medium leading-relaxed mt-1">
+              Welcome to the official gallery. Experience the curated collection of memories, preserved beautifully.
+            </p>
 
-            <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-200 mt-1">
+            <div className="flex flex-wrap items-center gap-3 mt-4 text-xs font-bold text-slate-200">
               {event?.date && (
-                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20">
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl backdrop-blur-md">
                   <CalendarDays className="h-4 w-4 text-[#c5a880]" />
                   <span>{new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                 </div>
               )}
               {event?.location && (
-                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20">
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl backdrop-blur-md">
                   <MapPin className="h-4 w-4 text-[#c5a880]" />
                   <span>{event.location}</span>
                 </div>
               )}
-              <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl backdrop-blur-md">
                 <ImageIcon className="h-4 w-4 text-[#c5a880]" />
                 <span>{media.length} Media Files</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Cover Photo Presentation Column */}
+          <div className="lg:col-span-5 flex justify-center lg:justify-end">
+            <div className="relative group p-2 bg-[#171614] border border-[#c5a880]/30 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transition-all duration-500 hover:border-[#c5a880]">
+              <div className="aspect-[16/10] w-full rounded-xl overflow-hidden relative">
+                {event?.coverImageUrl ? (
+                  <img src={event.coverImageUrl} alt="Cover Preview" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-tr from-[#1a1714] to-[#2a2520] flex items-center justify-center text-[#c5a880]">
+                    <ImageIcon className="w-12 h-12 opacity-40" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
             </div>
           </div>
@@ -955,10 +983,16 @@ export default function ClientGallery() {
           </div>
 
           <div className="flex flex-wrap items-center gap-6 text-xs text-slate-300 font-medium">
-            {typeof event?.studioId === 'object' && event?.studioId?.ownerId && typeof event.studioId.ownerId === 'object' && (event.studioId.ownerId as any).email && (
-              <a href={`mailto:${(event.studioId.ownerId as any).email}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-colors">
-                <Mail className="h-4 w-4 text-[#c5a880]" />
-                <span>{(event.studioId.ownerId as any).email}</span>
+            {typeof event?.studioId === 'object' && (event.studioId as any).instagramUrl && (
+              <a href={(event.studioId as any).instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-all duration-300 hover:border-[#c5a880]/30 hover:scale-[1.03]">
+                <Instagram className="h-4 w-4 text-[#c5a880]" />
+                <span>Instagram</span>
+              </a>
+            )}
+            {typeof event?.studioId === 'object' && (event.studioId as any).facebookUrl && (
+              <a href={(event.studioId as any).facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-all duration-300 hover:border-[#c5a880]/30 hover:scale-[1.03]">
+                <Facebook className="h-4 w-4 text-[#c5a880]" />
+                <span>Facebook</span>
               </a>
             )}
             {typeof event?.studioId === 'object' && event?.studioId?.ownerId && typeof event.studioId.ownerId === 'object' && (event.studioId.ownerId as any).phone && (
