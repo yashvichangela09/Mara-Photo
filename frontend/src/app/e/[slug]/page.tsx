@@ -6,7 +6,7 @@ import {
   ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, 
   Settings, Camera, Trash2, Loader2, Check, Copy, ZoomIn, Play, ShieldCheck, RefreshCw, ScanFace, 
   ChevronRight, ChevronLeft, LayoutGrid, Sliders, X, Download, Loader, Sparkles, CalendarDays, 
-  Lock, Key, AlertCircle, Search, Eye, EyeOff, Instagram, Facebook
+  Lock, Key, AlertCircle, Search, Eye, EyeOff
 } from 'lucide-react';
 import JSZip from 'jszip';
 import confetti from 'canvas-confetti';
@@ -985,13 +985,19 @@ export default function ClientGallery() {
           <div className="flex flex-wrap items-center gap-6 text-xs text-slate-300 font-medium">
             {typeof event?.studioId === 'object' && (event.studioId as any).instagramUrl && (
               <a href={(event.studioId as any).instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-all duration-300 hover:border-[#c5a880]/30 hover:scale-[1.03]">
-                <Instagram className="h-4 w-4 text-[#c5a880]" />
+                <svg className="w-4 h-4 fill-none stroke-current text-[#c5a880]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
                 <span>Instagram</span>
               </a>
             )}
             {typeof event?.studioId === 'object' && (event.studioId as any).facebookUrl && (
               <a href={(event.studioId as any).facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-all duration-300 hover:border-[#c5a880]/30 hover:scale-[1.03]">
-                <Facebook className="h-4 w-4 text-[#c5a880]" />
+                <svg className="w-4 h-4 fill-none stroke-current text-[#c5a880]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                </svg>
                 <span>Facebook</span>
               </a>
             )}
