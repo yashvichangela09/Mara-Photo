@@ -1,15 +1,15 @@
 'use client';
-import React, { useState, useEffect, use, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, Settings, Sliders, Camera, Trash2, Loader2, Check, Copy, Eye, EyeOff, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import toast from 'react-hot-toast';
 import CustomDatePicker from '../../../../components/CustomDatePicker';
 
-export default function EventUploadPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const eventId = resolvedParams.id;
+export default function EventUploadPage() {
+  const params = useParams();
+  const eventId = params?.id as string;
 
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
