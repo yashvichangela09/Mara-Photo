@@ -111,7 +111,7 @@ export default function PortfoliosPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {portfolioEvents.map((event, idx) => (
-              <Link key={event._id || idx} href={`/dashboard/events/${event.code || event.eventCode || event._id}`}>
+              <Link key={event._id || idx} href={`/e/${event.code}`} target="_blank" rel="noopener noreferrer">
                 <div className="relative group overflow-hidden rounded-2xl cursor-pointer aspect-video flex flex-col justify-between p-5 border border-slate-200 hover:border-[#c5a880] transition-all shadow-sm hover:shadow-md">
                   {/* Background Image & Overlay */}
                   <div className="absolute inset-0 z-0">
@@ -134,7 +134,7 @@ export default function PortfoliosPage() {
                   </div>
 
                   <div className="relative z-10 mt-auto">
-                    <h3 className="text-lg font-bold text-white group-hover:text-[#c5a880] mb-4 line-clamp-2 leading-tight transition-colors">{event.name}</h3>
+                    <h3 className="text-lg font-bold text-[#c5a880] mb-4 line-clamp-2 leading-tight">{event.name}</h3>
                     
                     <div className="h-[1px] w-full bg-white/20" />
                   </div>
