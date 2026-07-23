@@ -125,7 +125,7 @@ export default function ClientGallery() {
   const fetchGalleryMedia = async (eventId: string) => {
     try {
       const res = await apiClient.get(`/media/event/${eventId}`);
-      setMedia(res.data.media);
+      setMedia(res.data.media || []);
     } catch (err) {
       console.error(err);
     }
@@ -967,7 +967,7 @@ export default function ClientGallery() {
           </div>
 
           <div className="flex flex-wrap items-center gap-6 text-xs text-slate-300 font-medium">
-            {typeof event?.studioId === 'object' && (event.studioId as any).instagramUrl && (
+            {event?.studioId && typeof event.studioId === 'object' && (event.studioId as any).instagramUrl && (
               <a href={(event.studioId as any).instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-all duration-300 hover:border-[#c5a880]/30 hover:scale-[1.03]">
                 <svg className="w-4 h-4 fill-none stroke-current text-[#c5a880]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
@@ -977,7 +977,7 @@ export default function ClientGallery() {
                 <span>Instagram</span>
               </a>
             )}
-            {typeof event?.studioId === 'object' && (event.studioId as any).facebookUrl && (
+            {event?.studioId && typeof event.studioId === 'object' && (event.studioId as any).facebookUrl && (
               <a href={(event.studioId as any).facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-all duration-300 hover:border-[#c5a880]/30 hover:scale-[1.03]">
                 <svg className="w-4 h-4 fill-none stroke-current text-[#c5a880]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
@@ -985,7 +985,7 @@ export default function ClientGallery() {
                 <span>Facebook</span>
               </a>
             )}
-            {typeof event?.studioId === 'object' && event?.studioId?.ownerId && typeof event.studioId.ownerId === 'object' && (event.studioId.ownerId as any).phone && (
+            {event?.studioId && typeof event.studioId === 'object' && event.studioId.ownerId && typeof event.studioId.ownerId === 'object' && (event.studioId.ownerId as any).phone && (
               <a href={`tel:${(event.studioId.ownerId as any).phone}`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl transition-colors">
                 <Phone className="h-4 w-4 text-[#c5a880]" />
                 <span>{(event.studioId.ownerId as any).phone}</span>
