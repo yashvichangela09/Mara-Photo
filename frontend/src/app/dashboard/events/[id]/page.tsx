@@ -44,6 +44,31 @@ export default function EventUploadPage() {
   const [deletingMedia, setDeletingMedia] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [showPassword, setShowPassword] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([]);
+  const [formData, setFormData] = useState({
+    name: '',
+    clientName: '',
+    clientMobile: '',
+    clientEmail: '',
+    date: '',
+    type: 'WEDDING',
+    location: '',
+    accessType: 'PUBLIC',
+    password: '',
+    customWatermark: false,
+    addToPortfolio: false,
+    coverImageUrl: '',
+    watermarkType: 'LOGO',
+    watermarkText: '',
+    watermarkLogoUrl: '',
+    watermarkTextColor: '#ffffff',
+    watermarkPosition: 'BOTTOM_RIGHT',
+    watermarkWidth: 20,
+    watermarkOpacity: 50
+  });
 
   const fetchEventDetails = async () => {
     try {
@@ -218,7 +243,6 @@ export default function EventUploadPage() {
     }
   };
 
-  const [uploadingLogo, setUploadingLogo] = useState(false);
   const handleWatermarkLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -244,32 +268,6 @@ export default function EventUploadPage() {
       if (e.target) e.target.value = '';
     }
   };
-
-  const [formData, setFormData] = useState({
-    name: '',
-    clientName: '',
-    clientMobile: '',
-    clientEmail: '',
-    date: '',
-    type: 'WEDDING',
-    location: '',
-    accessType: 'PUBLIC',
-    password: '',
-    customWatermark: false,
-    addToPortfolio: false,
-    coverImageUrl: '',
-    watermarkType: 'LOGO',
-    watermarkText: '',
-    watermarkLogoUrl: '',
-    watermarkTextColor: '#ffffff',
-    watermarkPosition: 'BOTTOM_RIGHT',
-    watermarkWidth: 20,
-    watermarkOpacity: 50
-  });
-
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [selectMode, setSelectMode] = useState(false);
-  const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([]);
 
   const handleBulkDelete = async () => {
     if (selectedMediaIds.length === 0) return;
