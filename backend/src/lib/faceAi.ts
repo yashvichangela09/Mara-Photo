@@ -86,9 +86,9 @@ export const detectFaces = async (imageBuffer: Buffer): Promise<DetectedFace[]> 
     const scaleX = width / tensorWidth;
     const scaleY = height / tensorHeight;
 
-    // Run face detection
+    // Run face detection with high confidence threshold (0.65) to skip background noise
     const detections = await faceapi
-      .detectAllFaces(tensor as any, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.4 }))
+      .detectAllFaces(tensor as any, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.65 }))
       .withFaceLandmarks()
       .withFaceDescriptors();
 
@@ -104,22 +104,26 @@ export const detectFaces = async (imageBuffer: Buffer): Promise<DetectedFace[]> 
       const bottom = Math.min(height, Math.floor((box.y + box.height) * scaleY));
       const right = Math.min(width, Math.floor((box.x + box.width) * scaleX));
 
+      const cropW = right - left;
+      const cropH = bottom - top;
+
+      // Ignore tiny/blurry faces (< 60px) to avoid low-quality false positive embeddings
+      if (cropW < 60 || cropH < 60) {
+        continue;
+      }
+
       // Extract embedding descriptor array (128-dimensional for face-api.js)
       const embedding = Array.from(det.descriptor);
 
       // Create a thumbnail crop of the face
       let thumbnail = '';
       try {
-        const cropW = right - left;
-        const cropH = bottom - top;
-        if (cropW > 0 && cropH > 0) {
-          const faceBuffer = await sharp(imageBuffer)
-            .extract({ left, top, width: cropW, height: cropH })
-            .resize(150, 150)
-            .jpeg({ quality: 90 })
-            .toBuffer();
-          thumbnail = faceBuffer.toString('base64');
-        }
+        const faceBuffer = await sharp(imageBuffer)
+          .extract({ left, top, width: cropW, height: cropH })
+          .resize(150, 150)
+          .jpeg({ quality: 90 })
+          .toBuffer();
+        thumbnail = faceBuffer.toString('base64');
       } catch (cropErr) {
         console.error('[FaceAI] Failed to extract face thumbnail crop:', cropErr);
       }
