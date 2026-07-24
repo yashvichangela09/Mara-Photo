@@ -73,14 +73,36 @@ export const uploadMedia = async (req: AuthRequest, res: Response) => {
         let finalBuffer = file.buffer;
         let finalSize = file.size;
 
-        if (type === 'PHOTO' && compress) {
-          // Compress all photos to max 3840px (4K) to save Cloudinary storage and bypass limits
-          finalBuffer = await sharp(file.buffer)
-            .resize({ width: 3840, height: 3840, fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality, mozjpeg: true })
-            .withMetadata() // Preserve EXIF data (orientation, etc)
-            .toBuffer();
-          finalSize = finalBuffer.length;
+        if (type === 'PHOTO') {
+          let resizeWidth = 3840;
+          let compressionQuality = quality;
+          
+          // Auto-compress if requested or if original size exceeds Cloudinary's 10MB limit
+          if (compress || finalSize > 9.5 * 1024 * 1024) {
+            let attempts = 0;
+            // Loop until size is under 9.5MB or max attempts reached
+            while ((compress || finalSize > 9.5 * 1024 * 1024) && attempts < 4) {
+              attempts++;
+              const targetWidth = Math.round(resizeWidth * (attempts === 1 ? 1.0 : 0.8));
+              const targetQuality = Math.max(50, compressionQuality - (attempts - 1) * 10);
+              
+              finalBuffer = await sharp(file.buffer)
+                .resize({ width: targetWidth, height: targetWidth, fit: 'inside', withoutEnlargement: true })
+                .jpeg({ quality: targetQuality, mozjpeg: true })
+                .withMetadata()
+                .toBuffer();
+                
+              finalSize = finalBuffer.length;
+              console.log(`[Upload] Auto-compression attempt ${attempts} for ${file.originalname}: size ${ (finalSize / 1024 / 1024).toFixed(2) }MB`);
+              
+              if (finalSize <= 9.5 * 1024 * 1024) {
+                break;
+              }
+              
+              resizeWidth = targetWidth;
+              compressionQuality = targetQuality;
+            }
+          }
         }
 
         // Upload optimized file buffer to Cloudinary
