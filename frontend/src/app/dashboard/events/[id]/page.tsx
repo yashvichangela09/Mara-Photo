@@ -1068,29 +1068,53 @@ export default function EventUploadPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-3 pt-2">
-                <button type="submit" disabled={saving} className="flex-1 flex justify-center items-center bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-bold py-3 rounded-xl text-sm transition-colors disabled:opacity-50">
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Event Details'}
-                </button>
-                <button 
-                  type="button" 
+              <div className="flex flex-col gap-3 pt-2">
+                <div className="flex items-center gap-3">
+                  <button type="submit" disabled={saving} className="flex-1 flex justify-center items-center bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-bold py-3 rounded-xl text-sm transition-colors disabled:opacity-50">
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Event Details'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={async () => {
+                      if (window.confirm('Are you sure you want to delete this event permanently?')) {
+                        try {
+                          setSaving(true);
+                          await apiClient.delete(`/event/${eventId}`);
+                          router.push('/dashboard/events');
+                        } catch (error) {
+                          console.error('Error deleting event:', error);
+                          toast.error('Error deleting event.');
+                          setSaving(false);
+                        }
+                      }
+                    }}
+                    className="flex items-center gap-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold px-4 py-3 rounded-xl text-sm transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  disabled={saving}
                   onClick={async () => {
-                    if (window.confirm('Are you sure you want to delete this event permanently?')) {
+                    if (window.confirm('Are you sure you want to re-process all photos? This will re-apply the watermark and re-scan all faces.')) {
                       try {
                         setSaving(true);
-                        await apiClient.delete(`/event/${eventId}`);
-                        router.push('/dashboard/events');
-                      } catch (error) {
-                        console.error('Error deleting event:', error);
-                        toast.error('Error deleting event.');
+                        const res = await apiClient.post(`/event/${event?._id}/reprocess`);
+                        toast.success(res.data.message || 'Re-processing started successfully.');
+                        fetchEventDetails();
+                      } catch (error: any) {
+                        console.error('Error re-processing media:', error);
+                        toast.error(error.response?.data?.error || 'Failed to start re-processing.');
+                      } finally {
                         setSaving(false);
                       }
                     }
                   }}
-                  className="flex items-center gap-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold px-4 py-3 rounded-xl text-sm transition-colors"
+                  className="w-full flex justify-center items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl text-sm transition-colors disabled:opacity-50 cursor-pointer"
                 >
-                  <Trash2 className="h-4 w-4" />
-                  Delete Event
+                  Re-process & Re-scan All Photos
                 </button>
               </div>
             </form>

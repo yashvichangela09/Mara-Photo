@@ -546,3 +546,59 @@ export const updatePortfolioStatus = async (req: AuthRequest, res: Response) => 
     return res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * Force re-process and re-scan all media for an event
+ */
+export const reprocessEventMedia = async (req: AuthRequest, res: Response) => {
+  const { eventId } = req.params;
+
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+
+    let event;
+    if (eventId.match(/^[0-9a-fA-F]{24}$/)) {
+      event = await Event.findById(eventId);
+    } else {
+      event = await Event.findOne({ code: eventId });
+    }
+    
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+
+    // Validate ownership
+    const studio = await Studio.findOne({ ownerId: req.user._id });
+    if (!studio && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const { FaceEmbedding, Media } = await import('../models');
+    
+    // Delete all existing FaceEmbeddings to avoid duplicates
+    await FaceEmbedding.deleteMany({ eventId: event._id });
+
+    // Fetch all photos
+    const mediaList = await Media.find({ eventId: event._id, type: 'PHOTO' });
+
+    // Trigger sequential re-processing
+    setTimeout(async () => {
+      try {
+        const { processMediaLocal } = await import('../workers/mediaWorker');
+        for (const media of mediaList) {
+          media.processedStatus = 'PENDING';
+          await media.save();
+          try {
+            await processMediaLocal(media._id.toString(), 'PHOTO', event.studioId.toString());
+          } catch (e) {
+            console.error(`Force re-process failed for ${media._id}:`, e);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to run background re-processing:', err);
+      }
+    }, 0);
+
+    return res.json({ message: `Re-processing started for ${mediaList.length} photos.` });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
