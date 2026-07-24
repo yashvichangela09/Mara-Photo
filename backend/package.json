@@ -12,6 +12,7 @@
     "@aws-sdk/client-s3": "^3.592.0",
     "@aws-sdk/s3-request-presigner": "^3.592.0",
     "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
     "@types/morgan": "^1.9.10",
     "@vladmandic/face-api": "^1.7.15",
     "axios": "^1.7.2",

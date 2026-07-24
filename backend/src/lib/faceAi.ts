@@ -3,7 +3,13 @@ import * as fs from 'fs';
 import axios from 'axios';
 import sharp from 'sharp';
 import * as tf from '@tensorflow/tfjs';
-import * as faceapi from '@vladmandic/face-api';
+
+// Polyfill TextEncoder/TextDecoder for browser build of face-api.js
+import { TextEncoder, TextDecoder } from 'util';
+global.TextEncoder = TextEncoder;
+(global as any).TextDecoder = TextDecoder;
+
+import * as faceapi from '@vladmandic/face-api/dist/face-api.node-wasm.js';
 
 const MODEL_DIR = path.join(process.cwd(), 'face-models');
 const MODEL_FILES = [
