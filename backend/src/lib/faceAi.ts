@@ -12,6 +12,8 @@ global.TextEncoder = TextEncoder;
 
 import * as faceapi from '@vladmandic/face-api/dist/face-api.node-wasm.js';
 
+sharp.cache(false);
+
 let MODEL_DIR = path.join(__dirname, '..', '..', 'node_modules', '@vladmandic', 'face-api', 'model');
 if (!fs.existsSync(MODEL_DIR)) {
   MODEL_DIR = path.join(process.cwd(), 'node_modules', '@vladmandic', 'face-api', 'model');

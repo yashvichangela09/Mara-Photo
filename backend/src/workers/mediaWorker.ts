@@ -13,6 +13,7 @@ import { Media, FaceEmbedding, Studio, Event } from '../models';
 import { detectFaces } from '../lib/faceAi';
 
 dotenv.config();
+sharp.cache(false);
 
 // ---- Redis availability check ----
 export let isRedisAvailable = false;
