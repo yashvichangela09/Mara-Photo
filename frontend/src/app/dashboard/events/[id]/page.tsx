@@ -422,7 +422,7 @@ export default function EventUploadPage() {
                          if (selectedMediaIds.length === mediaItems.length) {
                            setSelectedMediaIds([]);
                          } else {
-                           setSelectedMediaIds(mediaItems.map(item => item._id));
+                           setSelectedMediaIds(mediaItems.filter(Boolean).map(item => item._id));
                          }
                        }}
                        className="text-xs font-bold text-[#c5a880] bg-[#c5a880]/10 hover:bg-[#c5a880]/20 border border-[#c5a880]/20 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
@@ -537,7 +537,7 @@ export default function EventUploadPage() {
                </div>
             ) : (
                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto pr-2 pb-4">
-                 {mediaItems.map((item, idx) => (
+                 {mediaItems.filter(Boolean).map((item, idx) => (
                     <div 
                       key={idx} 
                       onClick={() => {
@@ -1104,7 +1104,8 @@ export default function EventUploadPage() {
 
       {/* Lightbox / Modal for preview & delete */}
       {selectedItem && (() => {
-        const selectedIndex = mediaItems.findIndex(m => m._id === selectedItem._id);
+        const activeMedia = (mediaItems || []).filter(Boolean);
+        const selectedIndex = activeMedia.findIndex(m => m._id === selectedItem._id);
         return (
           <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-6">
             {/* Header */}
@@ -1123,7 +1124,7 @@ export default function EventUploadPage() {
             {/* Left navigation arrow */}
             {selectedIndex > 0 && (
               <button 
-                onClick={(e) => { e.stopPropagation(); setSelectedItem(mediaItems[selectedIndex - 1]); }} 
+                onClick={(e) => { e.stopPropagation(); setSelectedItem(activeMedia[selectedIndex - 1]); }} 
                 className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10 z-20 cursor-pointer"
               >
                 <ChevronLeft className="h-6 w-6" />
@@ -1149,9 +1150,9 @@ export default function EventUploadPage() {
             </div>
 
             {/* Right navigation arrow */}
-            {selectedIndex < mediaItems.length - 1 && (
+            {selectedIndex < activeMedia.length - 1 && (
               <button 
-                onClick={(e) => { e.stopPropagation(); setSelectedItem(mediaItems[selectedIndex + 1]); }} 
+                onClick={(e) => { e.stopPropagation(); setSelectedItem(activeMedia[selectedIndex + 1]); }} 
                 className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10 z-20 cursor-pointer"
               >
                 <ChevronRight className="h-6 w-6" />
