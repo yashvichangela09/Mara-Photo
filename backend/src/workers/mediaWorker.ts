@@ -10,6 +10,7 @@ import dotenv from 'dotenv';
 import { redisConfig } from '../config/redis';
 import { uploadFile } from '../services/StorageService';
 import { Media, FaceEmbedding, Studio, Event } from '../models';
+import { detectFaces } from '../lib/faceAi';
 
 dotenv.config();
 
@@ -41,8 +42,6 @@ checkRedis().then((available) => {
     console.log('[MediaWorker] Redis is offline – BullMQ queues disabled. Uploads will process synchronously.');
   }
 });
-
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 
 /**
  * Downloads a file from a URL as a Buffer (e.g. for Studio Logos)
@@ -286,19 +285,11 @@ export const processPhoto = async (mediaId: string, studioId: string) => {
     const thumbFolder = `events/${media.eventId}/photos/thumb`;
     const { url: thumbnailUrl } = await uploadFile(thumbnailImage, thumbFolder);
 
-    const formData = new FormData();
-    // Send the high-res 1600px gallery image to AI service to detect tiny faces in group photos
-    const fileBlob = new Blob([new Uint8Array(galleryImage)], { type: 'image/jpeg' });
-    formData.append('file', fileBlob, 'image.jpg');
-
-    let faces = [];
+    let faces: any[] = [];
     try {
-      const aiResponse = await axios.post(`${AI_SERVICE_URL}/detect-faces`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      faces = aiResponse.data.faces || [];
+      faces = await detectFaces(galleryImage);
     } catch (aiErr: any) {
-      console.warn(`[AI Warning]: AI Face Service offline. Skipping face detection for photo ${mediaId}:`, aiErr.message);
+      console.warn(`[AI Warning]: Local face-api error. Skipping face detection for photo ${mediaId}:`, aiErr.message);
     }
     console.log(`Detected ${faces.length} faces in photo ${mediaId}`);
 
@@ -373,16 +364,8 @@ export const processVideo = async (mediaId: string, studioId: string) => {
 
       const frameBuffer = fs.readFileSync(framePath);
 
-      const formData = new FormData();
-      const fileBlob = new Blob([new Uint8Array(frameBuffer)], { type: 'image/jpeg' });
-      formData.append('file', fileBlob, 'frame.jpg');
-
       try {
-        const aiResponse = await axios.post(`${AI_SERVICE_URL}/detect-faces`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        const faces = aiResponse.data.faces || [];
+        const faces = await detectFaces(frameBuffer);
         for (const face of faces) {
           await FaceEmbedding.create({
             mediaId: media._id,

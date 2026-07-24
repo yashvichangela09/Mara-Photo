@@ -1,17 +1,14 @@
 import { Request, Response } from 'express';
-import axios from 'axios';
 import { FaceEmbedding, Media, Studio } from '../models';
+import { detectFaces } from '../lib/faceAi';
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
-
-// InsightFace (ArcFace buffalo_l) cosine similarity thresholds
-// Lowered to 0.45 to aggressively find matches in group photos, side-profiles, and varying lighting
-const SIMILARITY_THRESHOLD = 0.45; // Minimum to count as a match
-const HIGH_CONFIDENCE_THRESHOLD = 0.65; // High confidence match
+// face-api.js ResNet-34 cosine similarity thresholds
+// L2 distance <= 0.6 maps to cosine similarity >= 0.80
+const SIMILARITY_THRESHOLD = 0.80; // Minimum to count as a match
+const HIGH_CONFIDENCE_THRESHOLD = 0.86; // High confidence match
 
 /**
  * Calculates cosine similarity between two L2-normalized vectors.
- * For InsightFace ArcFace, values > 0.45 strongly indicate the same person.
  */
 const cosineSimilarity = (vecA: number[], vecB: number[]): number => {
   if (vecA.length !== vecB.length) return 0;
@@ -30,7 +27,7 @@ const cosineSimilarity = (vecA: number[], vecB: number[]): number => {
 /**
  * Search photos and videos by uploading a selfie.
  * Flow:
- *   1. Send selfie to AI service → get face embedding(s)
+ *   1. Extract face embedding(s) using local face-api.js
  *   2. Fetch all face embeddings for the event from DB
  *   3. Compare using cosine similarity
  *   4. Return matched media sorted by similarity score
@@ -44,27 +41,12 @@ export const searchBySelfie = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Selfie photo file is required.' });
     }
 
-    // 1. Call AI service to extract embedding for the selfie
+    // 1. Detect faces locally
     let faces: any[] = [];
     try {
-      const formData = new FormData();
-      const fileBlob = new Blob([new Uint8Array(file.buffer)], { type: file.mimetype });
-      formData.append('file', fileBlob, 'selfie.jpg');
-
-      const aiResponse = await axios.post(`${AI_SERVICE_URL}/detect-faces`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 30000, // 30 second timeout for AI processing
-      });
-
-      faces = aiResponse.data.faces || [];
+      faces = await detectFaces(file.buffer);
     } catch (aiErr: any) {
-      console.error('[AI Search] AI service connection error:', aiErr.message);
-      
-      if (aiErr.code === 'ECONNREFUSED') {
-        return res.status(503).json({ 
-          error: 'AI Face Detection service is not running. Please start the AI service on port 8000.' 
-        });
-      }
+      console.error('[AI Search] Local face-api error:', aiErr.message);
       return res.status(500).json({ 
         error: 'AI Face Detection service error. Please try again later.' 
       });
