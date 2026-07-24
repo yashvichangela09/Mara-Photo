@@ -2,26 +2,33 @@ import { Request, Response } from 'express';
 import { FaceEmbedding, Media, Studio } from '../models';
 import { detectFaces } from '../lib/faceAi';
 
-// face-api.js ResNet-34 cosine similarity thresholds
-// L2 distance <= 0.6 maps to cosine similarity >= 0.80
-const SIMILARITY_THRESHOLD = 0.80; // Minimum to count as a match
-const HIGH_CONFIDENCE_THRESHOLD = 0.86; // High confidence match
+// face-api.js ResNet-34 Euclidean distance threshold (lower is closer/better)
+const DISTANCE_THRESHOLD = 0.60; // Standard face-api.js match threshold
 
 /**
- * Calculates cosine similarity between two L2-normalized vectors.
+ * Calculates Euclidean distance between two vectors.
  */
-const cosineSimilarity = (vecA: number[], vecB: number[]): number => {
-  if (vecA.length !== vecB.length) return 0;
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
+const euclideanDistance = (vecA: number[], vecB: number[]): number => {
+  if (vecA.length !== vecB.length) return Infinity;
+  let sum = 0;
   for (let i = 0; i < vecA.length; i++) {
-    dotProduct += vecA[i] * vecB[i];
-    normA += vecA[i] * vecA[i];
-    normB += vecB[i] * vecB[i];
+    const diff = vecA[i] - vecB[i];
+    sum += diff * diff;
   }
-  if (normA === 0 || normB === 0) return 0;
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  return Math.sqrt(sum);
+};
+
+/**
+ * Maps Euclidean distance to a customer-friendly similarity score (0.0 to 1.0)
+ * where 0.0 distance -> 100% similarity, and 0.6 distance -> 75% similarity.
+ */
+const distanceToSimilarity = (dist: number): number => {
+  if (dist <= 0.6) {
+    return 1.0 - (dist / 0.6) * 0.25;
+  } else if (dist < 1.0) {
+    return 0.75 * (1.0 - dist) / 0.4;
+  }
+  return 0;
 };
 
 /**
@@ -71,12 +78,13 @@ export const searchBySelfie = async (req: Request, res: Response) => {
       });
     }
 
-    // 3. Compute similarities against all stored embeddings
+    // 3. Compute Euclidean distances against all stored embeddings
     const matches: { mediaId: string; timestamp?: number; similarity: number }[] = [];
     
     for (const item of eventEmbeddings) {
-      const similarity = cosineSimilarity(queryEmbedding, item.embedding);
-      if (similarity >= SIMILARITY_THRESHOLD) {
+      const distance = euclideanDistance(queryEmbedding, item.embedding);
+      if (distance <= DISTANCE_THRESHOLD) {
+        const similarity = distanceToSimilarity(distance);
         matches.push({
           mediaId: item.mediaId.toString(),
           timestamp: item.timestamp,
@@ -133,7 +141,7 @@ export const searchBySelfie = async (req: Request, res: Response) => {
         ...media.toObject(),
         similarity: parseFloat(group.bestSimilarity.toFixed(4)),
         similarityPercent,
-        confidence: group.bestSimilarity >= HIGH_CONFIDENCE_THRESHOLD ? 'HIGH' : 'MEDIUM',
+        confidence: group.bestSimilarity >= 0.85 ? 'HIGH' : 'MEDIUM',
         matchCount: group.matchCount,
         timestamps: group.timestamps,
       };
