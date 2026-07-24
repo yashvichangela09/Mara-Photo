@@ -3,7 +3,8 @@ import { FaceEmbedding, Media, Studio } from '../models';
 import { detectFaces } from '../lib/faceAi';
 
 // face-api.js ResNet-34 Euclidean distance threshold (lower is closer/better)
-const DISTANCE_THRESHOLD = 0.60; // Standard face-api.js match threshold
+// 0.68 is optimal for matching phone selfies against high-res DSLR photos
+const DISTANCE_THRESHOLD = 0.68; 
 
 /**
  * Calculates Euclidean distance between two vectors.
@@ -20,13 +21,11 @@ const euclideanDistance = (vecA: number[], vecB: number[]): number => {
 
 /**
  * Maps Euclidean distance to a customer-friendly similarity score (0.0 to 1.0)
- * where 0.0 distance -> 100% similarity, and 0.6 distance -> 75% similarity.
+ * where 0.0 distance -> 100% similarity, and 0.68 distance -> 70% similarity.
  */
 const distanceToSimilarity = (dist: number): number => {
-  if (dist <= 0.6) {
-    return 1.0 - (dist / 0.6) * 0.25;
-  } else if (dist < 1.0) {
-    return 0.75 * (1.0 - dist) / 0.4;
+  if (dist <= 0.68) {
+    return 1.0 - (dist / 0.68) * 0.30;
   }
   return 0;
 };
