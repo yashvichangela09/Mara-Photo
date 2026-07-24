@@ -597,8 +597,8 @@ export const reprocessEventMedia = async (req: AuthRequest, res: Response) => {
           await media.save();
           try {
             await processMediaLocal(media._id.toString(), 'PHOTO', event.studioId.toString());
-            // Small breathing gap for GC to clear memory
-            await new Promise(resolve => setTimeout(resolve, 600));
+            // Yield to the event loop so that Render's health checks can be answered!
+            await new Promise(resolve => setTimeout(resolve, 2500));
           } catch (e) {
             console.error(`Force re-process failed for ${media._id}:`, e);
           }

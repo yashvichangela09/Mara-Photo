@@ -173,8 +173,8 @@ export const uploadMedia = async (req: AuthRequest, res: Response) => {
             await Promise.all(batch.map(item => processMediaLocal(item.id, item.type, item.studioId).catch(procErr => {
               console.error(`[Sync Process Error]: Failed to process media ${item.id}:`, procErr);
             })));
-            // Small breathing gap for GC to clear memory
-            await new Promise(resolve => setTimeout(resolve, 600));
+            // Yield to the event loop so that Render's health checks can be answered!
+            await new Promise(resolve => setTimeout(resolve, 2500));
           }
         };
         await processInBatches(offlineQueue, 1);
