@@ -568,7 +568,16 @@ export const reprocessEventMedia = async (req: AuthRequest, res: Response) => {
     // Validate ownership
     const studio = await Studio.findOne({ ownerId: req.user._id });
     if (!studio && req.user.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Unauthorized' });
+      if (req.user.role === 'TEAM_MEMBER') {
+        const isAssigned = event.assignedTeamMembers.some(
+          (tmId) => tmId.toString() === req.user?._id.toString()
+        );
+        if (!isAssigned) {
+          return res.status(403).json({ error: 'Unauthorized to reprocess this event' });
+        }
+      } else {
+        return res.status(403).json({ error: 'Unauthorized to reprocess this event' });
+      }
     }
 
     const { FaceEmbedding, Media } = await import('../models');
