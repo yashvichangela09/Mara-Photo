@@ -143,7 +143,7 @@ export const uploadMedia = async (req: AuthRequest, res: Response) => {
     uploadedMediaList.push(...results);
 
     if (offlineQueue.length > 0) {
-      console.log(`[Upload] Redis offline. Processing ${offlineQueue.length} media items in background batches of 5.`);
+      console.log(`[Upload] Redis offline. Processing ${offlineQueue.length} media items in background batches of 1.`);
       setTimeout(async () => {
         const processInBatches = async (items: any[], batchSize: number) => {
           for (let i = 0; i < items.length; i += batchSize) {
@@ -153,7 +153,7 @@ export const uploadMedia = async (req: AuthRequest, res: Response) => {
             })));
           }
         };
-        await processInBatches(offlineQueue, 5);
+        await processInBatches(offlineQueue, 1);
       }, 0);
     }
 

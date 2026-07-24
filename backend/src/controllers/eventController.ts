@@ -418,7 +418,7 @@ export const updateEvent = async (req: AuthRequest, res: Response) => {
             }
           };
 
-          await processInBatches(mediaList, 5); // Process 5 photos at a time
+          await processInBatches(mediaList, 1); // Process 1 photo at a time
           console.log(`[Watermark] Successfully queued/processed ${mediaList.length} photos for re-watermarking.`);
         } catch (err) {
           console.error('[Watermark] Failed to re-queue photos:', err);
