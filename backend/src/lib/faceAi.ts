@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import axios from 'axios';
 import sharp from 'sharp';
 import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-wasm';
 
 // Polyfill TextEncoder/TextDecoder for browser build of face-api.js
 import { TextEncoder, TextDecoder } from 'util';
@@ -25,8 +26,8 @@ export const initFaceAi = async () => {
   if (modelsLoaded) return;
 
   try {
-    // Set tfjs backend to CPU for compatibility on serverless environments
-    await tf.setBackend('cpu');
+    // Set tfjs backend to WASM for high performance and low memory
+    await tf.setBackend('wasm');
     await tf.ready();
     console.log('[FaceAI] TensorFlow.js initialized with backend:', tf.getBackend());
 
