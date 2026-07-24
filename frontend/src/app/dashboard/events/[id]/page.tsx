@@ -6,6 +6,7 @@ import { ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User,
 import { apiClient } from '@/lib/api';
 import toast from 'react-hot-toast';
 import CustomDatePicker from '../../../../components/CustomDatePicker';
+import imageCompression from 'browser-image-compression';
 
 export default function EventUploadPage() {
   const params = useParams();
@@ -83,8 +84,6 @@ export default function EventUploadPage() {
       let uploadedCount = 0;
       let successful = 0;
       let failed = 0;
-      
-      const imageCompression = (await import('browser-image-compression')).default;
 
       // Function to process and upload a single file
       const uploadSingleFile = async (file: File) => {
