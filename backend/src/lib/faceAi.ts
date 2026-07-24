@@ -50,7 +50,10 @@ export const initFaceAi = async () => {
  * Helper to convert sharp image buffer to a 3D tensor
  */
 const bufferToTensor = async (imageBuffer: Buffer): Promise<tf.Tensor3D> => {
+  // Resize to max 800px width/height before converting to raw buffer
+  // This drastically reduces memory usage from 100MB+ to ~2MB per image!
   const { data, info } = await sharp(imageBuffer)
+    .resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true })
     .raw()
     .toBuffer({ resolveWithObject: true });
 
@@ -77,6 +80,12 @@ export const detectFaces = async (imageBuffer: Buffer): Promise<DetectedFace[]> 
 
     tensor = await bufferToTensor(imageBuffer);
 
+    // Compute coordinate scaling factors (Original image size / Resized tensor size)
+    const tensorWidth = tensor.shape[1];
+    const tensorHeight = tensor.shape[0];
+    const scaleX = width / tensorWidth;
+    const scaleY = height / tensorHeight;
+
     // Run face detection
     const detections = await faceapi
       .detectAllFaces(tensor as any, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.4 }))
@@ -88,12 +97,12 @@ export const detectFaces = async (imageBuffer: Buffer): Promise<DetectedFace[]> 
     for (const det of detections) {
       const box = det.detection.box;
       
-      // Map bounding box to standard [top, right, bottom, left] format
-      // Clamp values to image dimensions
-      const top = Math.max(0, Math.floor(box.y));
-      const left = Math.max(0, Math.floor(box.x));
-      const bottom = Math.min(height, Math.floor(box.y + box.height));
-      const right = Math.min(width, Math.floor(box.x + box.width));
+      // Map bounding box to standard [top, right, bottom, left] format using scaling factors
+      // Clamp values to original image dimensions
+      const top = Math.max(0, Math.floor(box.y * scaleY));
+      const left = Math.max(0, Math.floor(box.x * scaleX));
+      const bottom = Math.min(height, Math.floor((box.y + box.height) * scaleY));
+      const right = Math.min(width, Math.floor((box.x + box.width) * scaleX));
 
       // Extract embedding descriptor array (128-dimensional for face-api.js)
       const embedding = Array.from(det.descriptor);
