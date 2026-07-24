@@ -264,6 +264,63 @@ export default function EventPhotosPage() {
     setCameraReady(false);
   };
 
+  const [isFaceDetected, setIsFaceDetected] = useState<boolean>(false);
+
+  // Real-time face detection on camera stream
+  useEffect(() => {
+    if (!cameraActive) {
+      setIsFaceDetected(false);
+      return;
+    }
+
+    let animationFrameId: number;
+
+    const detectFace = () => {
+      const video = videoRef.current;
+      if (video && video.readyState === 4) {
+        const canvas = document.createElement('canvas');
+        const w = 320;
+        const h = 240;
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, w, h);
+          const imgData = ctx.getImageData(80, 40, 160, 160);
+          const data = imgData.data;
+          let skinPixels = 0;
+          const totalPixels = data.length / 4;
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+
+            const isSkin = 
+              r > 45 && g > 35 && b > 15 &&
+              Math.max(r, g, b) - Math.min(r, g, b) > 15 &&
+              Math.abs(r - g) > 15 &&
+              r > g && r > b;
+
+            if (isSkin) skinPixels++;
+          }
+
+          const skinRatio = skinPixels / totalPixels;
+          setIsFaceDetected(skinRatio >= 0.16);
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(detectFace);
+    };
+
+    animationFrameId = requestAnimationFrame(detectFace);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [cameraActive]);
+
   const captureFromCamera = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
@@ -716,10 +773,32 @@ export default function EventPhotosPage() {
                     />
                     {/* Face guide overlay */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-40 h-52 border-2 border-white/40 rounded-[50%]" />
+                      <div className={`w-44 h-56 rounded-[50%] border-4 transition-all duration-300 ${
+                        isFaceDetected 
+                          ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.8)] scale-105' 
+                          : 'border-rose-500/90 shadow-[0_0_20px_rgba(244,63,94,0.6)] animate-pulse'
+                      }`} />
                     </div>
                     {cameraReady && (
-                      <p className="absolute bottom-3 left-0 right-0 text-center text-xs text-white/70 font-bold">Position your face in the oval</p>
+                      <p className="absolute bottom-3 left-0 right-0 text-center pointer-events-none">
+                        <span className={`text-[11px] font-extrabold px-3.5 py-1.5 rounded-full transition-all shadow-lg inline-flex items-center gap-1.5 ${
+                          isFaceDetected 
+                            ? 'bg-emerald-500 text-white shadow-emerald-500/30 ring-2 ring-emerald-300' 
+                            : 'bg-rose-600/90 text-white shadow-rose-500/30'
+                        }`}>
+                          {isFaceDetected ? (
+                            <>
+                              <CheckCircle2 className="h-3.5 w-3.5 animate-bounce" />
+                              ✓ Face Detected - Ready!
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="h-3.5 w-3.5" />
+                              Position your face inside the oval
+                            </>
+                          )}
+                        </span>
+                      </p>
                     )}
                   </div>
                 )}
@@ -747,10 +826,14 @@ export default function EventPhotosPage() {
                   <button
                     type="button"
                     onClick={captureFromCamera}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                    className={`w-full font-bold py-3.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2 ${
+                      isFaceDetected 
+                        ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30 scale-[1.01]' 
+                        : 'bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b]'
+                    }`}
                   >
                     <Camera className="h-5 w-5" />
-                    Capture Photo
+                    {isFaceDetected ? 'Capture Photo' : 'Capture Photo'}
                   </button>
                 )}
 

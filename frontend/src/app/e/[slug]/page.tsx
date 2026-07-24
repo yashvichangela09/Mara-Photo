@@ -6,7 +6,7 @@ import {
   ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, 
   Settings, Camera, Trash2, Loader2, Check, Copy, ZoomIn, Play, ShieldCheck, RefreshCw, ScanFace, 
   ChevronRight, ChevronLeft, LayoutGrid, Sliders, X, Download, Loader, Sparkles, CalendarDays, 
-  Lock, Key, AlertCircle, Search, Eye, EyeOff
+  Lock, Key, AlertCircle, Search, Eye, EyeOff, CheckCircle2
 } from 'lucide-react';
 import JSZip from 'jszip';
 import confetti from 'canvas-confetti';
@@ -263,6 +263,65 @@ export default function ClientGallery() {
       setWebcamStream(null);
     }
   }, [webcamStream]);
+
+  const [isFaceDetected, setIsFaceDetected] = useState<boolean>(false);
+
+  // Real-time client-side face detection loop on webcam video
+  useEffect(() => {
+    if (!webcamStream || searchTab !== 'camera') {
+      setIsFaceDetected(false);
+      return;
+    }
+
+    let animationFrameId: number;
+
+    const detectFace = () => {
+      const video = videoRef.current;
+      if (video && video.readyState === 4) {
+        const canvas = document.createElement('canvas');
+        const w = 320;
+        const h = 240;
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, w, h);
+          // Sample center oval region of the video frame
+          const imgData = ctx.getImageData(80, 40, 160, 160);
+          const data = imgData.data;
+          let skinPixels = 0;
+          const totalPixels = data.length / 4;
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+
+            // Skin tone detection parameters (YCbCr / RGB rules)
+            const isSkin = 
+              r > 45 && g > 35 && b > 15 &&
+              Math.max(r, g, b) - Math.min(r, g, b) > 15 &&
+              Math.abs(r - g) > 15 &&
+              r > g && r > b;
+
+            if (isSkin) skinPixels++;
+          }
+
+          const skinRatio = skinPixels / totalPixels;
+          setIsFaceDetected(skinRatio >= 0.16);
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(detectFace);
+    };
+
+    animationFrameId = requestAnimationFrame(detectFace);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [webcamStream, searchTab]);
 
   const capturePhoto = () => {
     if (!videoRef.current) return;
@@ -1070,20 +1129,42 @@ export default function ClientGallery() {
                   <div className="w-full aspect-[4/3] rounded-2xl border-2 border-slate-200 overflow-hidden bg-black relative">
                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-48 h-48 border-2 border-white/40 rounded-full" />
+                      <div className={`w-52 h-52 rounded-full border-4 transition-all duration-300 ${
+                        isFaceDetected 
+                          ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.8)] scale-105' 
+                          : 'border-rose-500/90 shadow-[0_0_20px_rgba(244,63,94,0.6)] animate-pulse'
+                      }`} />
                     </div>
-                    <div className="absolute bottom-3 left-0 right-0 text-center">
-                      <span className="text-[10px] text-white/70 font-semibold bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full">
-                        Position your face in the circle
+                    <div className="absolute bottom-3 left-0 right-0 text-center pointer-events-none">
+                      <span className={`text-[11px] font-extrabold px-3.5 py-1.5 rounded-full transition-all shadow-lg inline-flex items-center gap-1.5 ${
+                        isFaceDetected 
+                          ? 'bg-emerald-500 text-white shadow-emerald-500/30 ring-2 ring-emerald-300' 
+                          : 'bg-rose-600/90 text-white shadow-rose-500/30'
+                      }`}>
+                        {isFaceDetected ? (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5 animate-bounce" />
+                            ✓ Face Detected - Ready to Capture!
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            Position your face inside the circle
+                          </>
+                        )}
                       </span>
                     </div>
                   </div>
                   <button 
                     onClick={capturePhoto} 
-                    className="w-full bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] font-black py-3.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2"
+                    className={`w-full font-black py-3.5 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 ${
+                      isFaceDetected
+                        ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30 scale-[1.01]'
+                        : 'bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b]'
+                    }`}
                   >
                     <Camera className="h-4.5 w-4.5" />
-                    Capture Photo
+                    {isFaceDetected ? 'Capture Photo' : 'Capture Photo'}
                   </button>
                 </div>
               )}
