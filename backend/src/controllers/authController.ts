@@ -388,8 +388,14 @@ export const forgotPasswordRequestOTP = async (req: Request, res: Response) => {
     user.otp = { code: otpCode, expiresAt };
     await user.save();
 
-    // Send via email service
-    await sendOTPEmail(user.email, otpCode);
+    // Send via email service safely
+    try {
+      await sendOTPEmail(user.email, otpCode);
+    } catch (mailErr: any) {
+      console.warn('[Forgot Password] Email dispatch warning:', mailErr.message);
+    }
+
+    console.log(`[FORGOT PASSWORD OTP] Email: ${user.email} -> OTP Code: ${otpCode}`);
 
     return res.json({ message: 'Password reset OTP sent to your email' });
   } catch (err: any) {

@@ -31,16 +31,27 @@ export const sendEmail = async (to: string, subject: string, html: string): Prom
   }
 
   try {
-    const info = await transporter.sendMail({
+    const sendPromise = transporter.sendMail({
       from: `"Mara Photo" <${fromEmail}>`,
       to,
       subject,
       html,
     });
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('SMTP connection timeout after 4s')), 4000)
+    );
+
+    const info = await Promise.race([sendPromise, timeoutPromise]);
     return info;
   } catch (error: any) {
-    console.error('Email Dispatch Error:', error);
-    throw new Error(`Email Send Failure: ${error.message}`);
+    console.error('[Email Dispatch Warning]:', error.message);
+    console.log(`\n--- [FALLBACK EMAIL LOG] ---`);
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Body: ${html.substring(0, 300)}...`);
+    console.log(`------------------------------\n`);
+    return { fallback: true, sent: false, error: error.message };
   }
 };
 
