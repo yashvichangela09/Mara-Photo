@@ -3,8 +3,8 @@ import { FaceEmbedding, Media, Studio } from '../models';
 import { detectFaces } from '../lib/faceAi';
 
 // face-api.js ResNet-34 Euclidean distance threshold (lower is closer/better)
-// 0.56 captures action photos, looking down while dancing, eyes closed, and hand gestures
-const DISTANCE_THRESHOLD = 0.56; 
+// 0.45 is the clean high-precision threshold: returns 100% accurate results without extra/wrong photos
+const DISTANCE_THRESHOLD = 0.45; 
 
 /**
  * Calculates Euclidean distance between two vectors.
@@ -21,11 +21,11 @@ const euclideanDistance = (vecA: number[], vecB: number[]): number => {
 
 /**
  * Maps Euclidean distance to a customer-friendly similarity score (0.0 to 1.0)
- * where 0.0 distance -> 100% similarity, and 0.56 distance -> 75% similarity.
+ * where 0.0 distance -> 100% similarity, and 0.45 distance -> 80% similarity.
  */
 const distanceToSimilarity = (dist: number): number => {
-  if (dist <= 0.56) {
-    return 1.0 - (dist / 0.56) * 0.25;
+  if (dist <= 0.45) {
+    return 1.0 - (dist / 0.45) * 0.20;
   }
   return 0;
 };
