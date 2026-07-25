@@ -332,7 +332,9 @@ export default function EventPhotosPage() {
           const meanGray = sumGray / totalPixels;
           const varianceGray = (sumGraySq / totalPixels) - (meanGray * meanGray);
 
-          const detected = skinRatio >= 0.12 && varianceGray > 100;
+          // Requires a large foreground human face filling the circle (at least 5500 skin pixels)
+          // Background objects or small box labels (< 3000 skin pixels) will stay RED!
+          const detected = skinPixels >= 5500 && varianceGray > 150;
           setIsFaceDetected(detected);
         }
       }
