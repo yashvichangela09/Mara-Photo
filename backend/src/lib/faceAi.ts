@@ -69,7 +69,11 @@ export interface DetectedFace {
 /**
  * Detects all faces in an image buffer and returns their embeddings and thumbnails
  */
-export const detectFaces = async (imageBuffer: Buffer): Promise<DetectedFace[]> => {
+export const detectFaces = async (
+  imageBuffer: Buffer,
+  minConfidence: number = 0.40,
+  minFaceSize: number = 30
+): Promise<DetectedFace[]> => {
   await initFaceAi();
 
   let tensor: tf.Tensor3D | null = null;
@@ -86,9 +90,9 @@ export const detectFaces = async (imageBuffer: Buffer): Promise<DetectedFace[]> 
     const scaleX = width / tensorWidth;
     const scaleY = height / tensorHeight;
 
-    // Run face detection with high confidence threshold (0.65) to skip background noise
+    // Run face detection with customizable confidence threshold
     const detections = await faceapi
-      .detectAllFaces(tensor as any, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.65 }))
+      .detectAllFaces(tensor as any, new faceapi.SsdMobilenetv1Options({ minConfidence }))
       .withFaceLandmarks()
       .withFaceDescriptors();
 
@@ -107,8 +111,8 @@ export const detectFaces = async (imageBuffer: Buffer): Promise<DetectedFace[]> 
       const cropW = right - left;
       const cropH = bottom - top;
 
-      // Ignore tiny/blurry faces (< 60px) to avoid low-quality false positive embeddings
-      if (cropW < 60 || cropH < 60) {
+      // Ignore tiny/blurry faces (< minFaceSize) to avoid low-quality false positive embeddings
+      if (cropW < minFaceSize || cropH < minFaceSize) {
         continue;
       }
 

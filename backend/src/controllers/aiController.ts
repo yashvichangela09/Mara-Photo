@@ -47,10 +47,10 @@ export const searchBySelfie = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Selfie photo file is required.' });
     }
 
-    // 1. Detect faces locally
+    // 1. Detect faces locally with lenient selfie threshold (0.40, minSize 30)
     let faces: any[] = [];
     try {
-      faces = await detectFaces(file.buffer);
+      faces = await detectFaces(file.buffer, 0.40, 30);
     } catch (aiErr: any) {
       console.error('[AI Search] Local face-api error:', aiErr.message);
       return res.status(500).json({ 

@@ -288,7 +288,7 @@ export const processPhoto = async (mediaId: string, studioId: string) => {
 
     let faces: any[] = [];
     try {
-      faces = await detectFaces(galleryImage);
+      faces = await detectFaces(galleryImage, 0.60, 50);
     } catch (aiErr: any) {
       console.warn(`[AI Warning]: Local face-api error. Skipping face detection for photo ${mediaId}:`, aiErr.message);
     }
