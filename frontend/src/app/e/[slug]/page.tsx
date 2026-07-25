@@ -321,12 +321,11 @@ export default function ClientGallery() {
             sumGray += gray;
             sumGraySq += gray * gray;
 
-            // Strict human skin tone rule
+            // Human skin tone rule (light-tolerant for room/mobile cameras)
             const isSkin = 
-              r > 60 && g > 40 && b > 20 &&
-              Math.max(r, g, b) - Math.min(r, g, b) > 20 &&
-              Math.abs(r - g) > 15 &&
-              r > g && r > b;
+              r > 40 && g > 25 && b > 10 &&
+              Math.max(r, g, b) - Math.min(r, g, b) > 10 &&
+              r > b;
 
             if (isSkin) skinPixels++;
           }
@@ -335,8 +334,8 @@ export default function ClientGallery() {
           const meanGray = sumGray / totalPixels;
           const varianceGray = (sumGraySq / totalPixels) - (meanGray * meanGray);
 
-          // Requires centered skin AND facial features contrast (eyes/nose/lips - not a plain wall or forehead!)
-          const detected = skinRatio >= 0.25 && varianceGray > 280;
+          // Requires skinRatio >= 0.12 and feature variance > 100 (light-tolerant)
+          const detected = skinRatio >= 0.12 && varianceGray > 100;
           setIsFaceDetected(detected);
         }
       }

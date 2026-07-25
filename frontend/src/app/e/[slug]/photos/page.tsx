@@ -321,10 +321,9 @@ export default function EventPhotosPage() {
             sumGraySq += gray * gray;
 
             const isSkin = 
-              r > 60 && g > 40 && b > 20 &&
-              Math.max(r, g, b) - Math.min(r, g, b) > 20 &&
-              Math.abs(r - g) > 15 &&
-              r > g && r > b;
+              r > 40 && g > 25 && b > 10 &&
+              Math.max(r, g, b) - Math.min(r, g, b) > 10 &&
+              r > b;
 
             if (isSkin) skinPixels++;
           }
@@ -333,7 +332,7 @@ export default function EventPhotosPage() {
           const meanGray = sumGray / totalPixels;
           const varianceGray = (sumGraySq / totalPixels) - (meanGray * meanGray);
 
-          const detected = skinRatio >= 0.25 && varianceGray > 280;
+          const detected = skinRatio >= 0.12 && varianceGray > 100;
           setIsFaceDetected(detected);
         }
       }
