@@ -3,8 +3,8 @@ import { FaceEmbedding, Media, Studio } from '../models';
 import { detectFaces } from '../lib/faceAi';
 
 // face-api.js ResNet-34 Euclidean distance threshold (lower is closer/better)
-// 0.58 is the ideal threshold to eliminate false positive matches of family members/relatives
-const DISTANCE_THRESHOLD = 0.58; 
+// 0.42 is ultra-strict: eliminates all 77%-79% false positive matches of relatives/guests
+const DISTANCE_THRESHOLD = 0.42; 
 
 /**
  * Calculates Euclidean distance between two vectors.
@@ -21,11 +21,11 @@ const euclideanDistance = (vecA: number[], vecB: number[]): number => {
 
 /**
  * Maps Euclidean distance to a customer-friendly similarity score (0.0 to 1.0)
- * where 0.0 distance -> 100% similarity, and 0.58 distance -> 75% similarity.
+ * where 0.0 distance -> 100% similarity, and 0.42 distance -> 80% similarity.
  */
 const distanceToSimilarity = (dist: number): number => {
-  if (dist <= 0.58) {
-    return 1.0 - (dist / 0.58) * 0.25;
+  if (dist <= 0.42) {
+    return 1.0 - (dist / 0.42) * 0.20;
   }
   return 0;
 };
