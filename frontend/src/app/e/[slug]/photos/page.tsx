@@ -275,9 +275,27 @@ export default function EventPhotosPage() {
 
     let animationFrameId: number;
 
-    const detectFace = () => {
+    const detectFace = async () => {
       const video = videoRef.current;
       if (video && video.readyState === 4) {
+        // 1. Try browser native Shape Detection API if available
+        if (typeof window !== 'undefined' && 'FaceDetector' in window) {
+          try {
+            const faceDetector = new (window as any).FaceDetector({ fastMode: true, maxFaces: 1 });
+            const detected = await faceDetector.detect(video);
+            if (detected && detected.length > 0) {
+              const bbox = detected[0].boundingBox;
+              const isCentered = bbox.width > 50 && bbox.height > 50;
+              setIsFaceDetected(isCentered);
+              animationFrameId = requestAnimationFrame(detectFace);
+              return;
+            }
+          } catch (e) {
+            // Fallback to advanced texture & skin variance analysis
+          }
+        }
+
+        // 2. Fallback: Advanced skin tone + facial feature texture variance analysis
         const canvas = document.createElement('canvas');
         const w = 320;
         const h = 240;
@@ -290,16 +308,21 @@ export default function EventPhotosPage() {
           const imgData = ctx.getImageData(80, 40, 160, 160);
           const data = imgData.data;
           let skinPixels = 0;
+          let sumGray = 0;
+          let sumGraySq = 0;
           const totalPixels = data.length / 4;
 
           for (let i = 0; i < data.length; i += 4) {
             const r = data[i];
             const g = data[i + 1];
             const b = data[i + 2];
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            sumGray += gray;
+            sumGraySq += gray * gray;
 
             const isSkin = 
-              r > 45 && g > 35 && b > 15 &&
-              Math.max(r, g, b) - Math.min(r, g, b) > 15 &&
+              r > 60 && g > 40 && b > 20 &&
+              Math.max(r, g, b) - Math.min(r, g, b) > 20 &&
               Math.abs(r - g) > 15 &&
               r > g && r > b;
 
@@ -307,7 +330,11 @@ export default function EventPhotosPage() {
           }
 
           const skinRatio = skinPixels / totalPixels;
-          setIsFaceDetected(skinRatio >= 0.16);
+          const meanGray = sumGray / totalPixels;
+          const varianceGray = (sumGraySq / totalPixels) - (meanGray * meanGray);
+
+          const detected = skinRatio >= 0.25 && varianceGray > 280;
+          setIsFaceDetected(detected);
         }
       }
 
