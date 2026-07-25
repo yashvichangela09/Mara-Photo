@@ -3,8 +3,8 @@ import { FaceEmbedding, Media, Studio } from '../models';
 import { detectFaces } from '../lib/faceAi';
 
 // face-api.js ResNet-34 Euclidean distance threshold (lower is closer/better)
-// 0.55 is optimal: captures side-profile, angled, and action photos while excluding unrelated people
-const DISTANCE_THRESHOLD = 0.55; 
+// 0.48 is high-precision: eliminates all 77%-78% false positive matches of non-matching people
+const DISTANCE_THRESHOLD = 0.48; 
 
 /**
  * Calculates Euclidean distance between two vectors.
@@ -21,11 +21,11 @@ const euclideanDistance = (vecA: number[], vecB: number[]): number => {
 
 /**
  * Maps Euclidean distance to a customer-friendly similarity score (0.0 to 1.0)
- * where 0.0 distance -> 100% similarity, and 0.55 distance -> 75% similarity.
+ * where 0.0 distance -> 100% similarity, and 0.48 distance -> 80% similarity.
  */
 const distanceToSimilarity = (dist: number): number => {
-  if (dist <= 0.55) {
-    return 1.0 - (dist / 0.55) * 0.25;
+  if (dist <= 0.48) {
+    return 1.0 - (dist / 0.48) * 0.20;
   }
   return 0;
 };
