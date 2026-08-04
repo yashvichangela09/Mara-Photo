@@ -660,40 +660,44 @@ export default function EventPhotosPage() {
             <span className="text-xs sm:text-sm text-white/60 font-mono font-medium tracking-widest pointer-events-auto">
               {lightboxIndex + 1} / {media.length}
             </span>
-            <div className="flex items-center gap-3 pointer-events-auto">
-              <button 
-                onClick={() => {
-                  if (currentLightboxMedia?._id) {
-                    toggleSelectMedia(currentLightboxMedia._id);
-                  }
-                }} 
-                className={`p-2.5 rounded-full flex items-center justify-center transition-all shadow-lg cursor-pointer border ${
-                  currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id)
-                    ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-400 shadow-rose-500/40 ring-2 ring-rose-300 scale-110'
-                    : 'bg-white/10 hover:bg-white/25 text-white border-white/20 hover:scale-110'
-                }`}
-                title={currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id) ? "Liked ❤️" : "Like Photo ❤️"}
-              >
-                <Heart className={`h-5 w-5 ${currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id) ? 'fill-white text-white' : 'text-rose-400'}`} />
-              </button>
-
-              <button
-                onClick={closeLightbox}
-                className="p-2 sm:p-2.5 rounded-full bg-white/5 hover:bg-white/15 text-white/80 hover:text-white transition-all pointer-events-auto"
-                title="Close (Esc)"
-              >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" />
-              </button>
-            </div>
+            <button
+              onClick={closeLightbox}
+              className="p-2 sm:p-2.5 rounded-full bg-white/5 hover:bg-white/15 text-white/80 hover:text-white transition-all pointer-events-auto"
+              title="Close (Esc)"
+            >
+              <X className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
           </div>
 
           <div className="w-full h-full p-4 sm:p-16 flex items-center justify-center relative">
-            <img
-              src={resolveMediaUrl(currentLightboxMedia)}
-              alt={`Photo ${lightboxIndex + 1}`}
-              className="max-w-full max-h-full object-contain select-none shadow-2xl"
-              draggable={false}
-            />
+            <div className="relative inline-block max-w-full max-h-full rounded-2xl overflow-hidden shadow-2xl">
+              <img
+                src={resolveMediaUrl(currentLightboxMedia)}
+                alt={`Photo ${lightboxIndex + 1}`}
+                className="max-w-full max-h-full object-contain select-none shadow-2xl"
+                draggable={false}
+              />
+
+              {/* ONLY Heart Button Overlayed DIRECTLY ON TOP-RIGHT CORNER OF PHOTO */}
+              <div className="absolute top-4 right-4 z-30 pointer-events-auto">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (currentLightboxMedia?._id) {
+                      toggleSelectMedia(currentLightboxMedia._id);
+                    }
+                  }} 
+                  className={`p-3 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xl backdrop-blur-md border ${
+                    currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id)
+                      ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-400 shadow-rose-500/40 ring-4 ring-rose-300/30 scale-110'
+                      : 'bg-black/40 hover:bg-black/60 text-white border-white/20 hover:scale-110'
+                  }`}
+                  title={currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id) ? "Liked ❤️" : "Like Photo ❤️"}
+                >
+                  <Heart className={`h-5 w-5 ${currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id) ? 'fill-white text-white' : 'text-rose-400'}`} />
+                </button>
+              </div>
+            </div>
           </div>
 
           <button
