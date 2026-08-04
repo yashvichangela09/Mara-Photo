@@ -667,14 +667,14 @@ export default function EventPhotosPage() {
                     toggleSelectMedia(currentLightboxMedia._id);
                   }
                 }} 
-                className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer border ${
+                className={`p-2.5 rounded-full flex items-center justify-center transition-all shadow-lg cursor-pointer border ${
                   currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id)
-                    ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-400 shadow-rose-500/40 ring-2 ring-rose-300'
-                    : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+                    ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-400 shadow-rose-500/40 ring-2 ring-rose-300 scale-110'
+                    : 'bg-white/10 hover:bg-white/25 text-white border-white/20 hover:scale-110'
                 }`}
+                title={currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id) ? "Liked ❤️" : "Like Photo ❤️"}
               >
-                <Heart className={`h-4.5 w-4.5 ${currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id) ? 'fill-white text-white' : 'text-rose-400'}`} />
-                {currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id) ? 'Liked ❤️' : 'Like Photo ❤️'}
+                <Heart className={`h-5 w-5 ${currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id) ? 'fill-white text-white' : 'text-rose-400'}`} />
               </button>
 
               <button

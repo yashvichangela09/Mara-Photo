@@ -797,7 +797,11 @@ export default function EventUploadPage() {
                             headers: { 'Content-Type': 'multipart/form-data' }
                           });
                           if (res.data && res.data.url) {
-                            setFormData(prev => ({ ...prev, coverImageUrl: res.data.url }));
+                            const newCoverUrl = res.data.url;
+                            setFormData(prev => ({ ...prev, coverImageUrl: newCoverUrl }));
+                            await apiClient.put(`/event/${eventId}`, { coverImageUrl: newCoverUrl });
+                            if (event) setEvent(prev => prev ? { ...prev, coverImageUrl: newCoverUrl } : null);
+                            toast.success('Cover image updated successfully!');
                           }
                         } catch (err) {
                           console.error("Cover upload failed", err);
