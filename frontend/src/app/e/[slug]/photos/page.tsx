@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { Lock, Key, AlertCircle, Loader, ChevronLeft, ChevronRight, X, Camera, ScanFace, Download, UploadCloud, CheckCircle2, ImagePlus, Video } from 'lucide-react';
+import { Lock, Key, AlertCircle, Loader, ChevronLeft, ChevronRight, X, Camera, ScanFace, Download, UploadCloud, CheckCircle2, ImagePlus, Video, Heart } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { apiClient } from '../../../../lib/api';
@@ -548,7 +548,9 @@ export default function EventPhotosPage() {
         <div className="max-w-[1800px] mx-auto px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {event?.studioId?.logoUrl ? (
-              <img src={event.studioId.logoUrl} alt="Logo" className="h-8 max-w-[130px] object-contain" />
+              <div className="h-9 max-w-[140px] p-1 bg-white rounded-lg border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0 overflow-hidden">
+                <img src={event.studioId.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <div className="bg-[#c5a880] p-1.5 rounded-lg text-[#09090b]">
@@ -658,13 +660,31 @@ export default function EventPhotosPage() {
             <span className="text-xs sm:text-sm text-white/60 font-mono font-medium tracking-widest pointer-events-auto">
               {lightboxIndex + 1} / {media.length}
             </span>
-            <button
-              onClick={closeLightbox}
-              className="p-2 sm:p-2.5 rounded-full bg-white/5 hover:bg-white/15 text-white/80 hover:text-white transition-all pointer-events-auto"
-              title="Close (Esc)"
-            >
-              <X className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
+            <div className="flex items-center gap-3 pointer-events-auto">
+              <button 
+                onClick={() => {
+                  if (currentLightboxMedia?._id) {
+                    toggleSelectMedia(currentLightboxMedia._id);
+                  }
+                }} 
+                className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer border ${
+                  currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id)
+                    ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-400 shadow-rose-500/40 ring-2 ring-rose-300'
+                    : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+                }`}
+              >
+                <Heart className={`h-4.5 w-4.5 ${currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id) ? 'fill-white text-white' : 'text-rose-400'}`} />
+                {currentLightboxMedia?._id && selectedMediaIds.includes(currentLightboxMedia._id) ? 'Liked ❤️' : 'Like Photo ❤️'}
+              </button>
+
+              <button
+                onClick={closeLightbox}
+                className="p-2 sm:p-2.5 rounded-full bg-white/5 hover:bg-white/15 text-white/80 hover:text-white transition-all pointer-events-auto"
+                title="Close (Esc)"
+              >
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
+            </div>
           </div>
 
           <div className="w-full h-full p-4 sm:p-16 flex items-center justify-center relative">

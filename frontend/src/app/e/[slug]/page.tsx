@@ -6,7 +6,7 @@ import {
   ArrowLeft, Upload, FolderUp, Image as ImageIcon, Video, Calendar, User, Phone, Mail, MapPin, 
   Settings, Camera, Trash2, Loader2, Check, Copy, ZoomIn, Play, ShieldCheck, RefreshCw, ScanFace, 
   ChevronRight, ChevronLeft, LayoutGrid, Sliders, X, Download, Loader, Sparkles, CalendarDays, 
-  Lock, Key, AlertCircle, Search, Eye, EyeOff, CheckCircle2
+  Lock, Key, AlertCircle, Search, Eye, EyeOff, CheckCircle2, Heart
 } from 'lucide-react';
 import JSZip from 'jszip';
 import confetti from 'canvas-confetti';
@@ -732,7 +732,9 @@ export default function ClientGallery() {
         <div className="max-w-7xl mx-auto px-6 h-22 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {event?.studioId?.logoUrl ? (
-              <img src={event?.studioId?.logoUrl} alt="Logo" className="h-12 md:h-14 max-w-[200px] object-contain shrink-0" />
+              <div className="h-12 md:h-14 max-w-[200px] p-1.5 bg-white rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0 overflow-hidden">
+                <img src={event?.studioId?.logoUrl} alt="Studio Logo" className="w-full h-full object-contain" />
+              </div>
             ) : (
               <div className="w-10 h-10 rounded-xl bg-[#c5a880] flex items-center justify-center text-[#09090b] font-black text-sm shadow-sm">M</div>
             )}
@@ -976,15 +978,28 @@ export default function ClientGallery() {
                       </div>
                     )}
 
+                    {/* Heart Like / Favorite Button on top-right of card */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleSelectMedia(m._id); }}
+                      className={`absolute top-2.5 right-2.5 z-30 p-2 rounded-full backdrop-blur-md transition-all shadow-md cursor-pointer ${
+                        isSelected
+                          ? 'bg-rose-500 text-white scale-105 shadow-rose-500/40 ring-2 ring-rose-300'
+                          : 'bg-black/30 hover:bg-black/60 text-white/90 hover:scale-110 border border-white/20'
+                      }`}
+                      title={isSelected ? "Liked / Selected ❤️" : "Like Photo ❤️"}
+                    >
+                      <Heart className={`h-4 w-4 ${isSelected ? 'fill-white text-white' : 'text-white'}`} />
+                    </button>
+
                     {/* Multi select overlay */}
                     {isMultiSelect ? (
-                      <div className="absolute inset-0 bg-black/5 flex items-start justify-start p-3 cursor-pointer z-30" onClick={() => toggleSelectMedia(m._id)}>
-                        <div className={`w-5.5 h-5.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-[#FF6B00] border-[#FF6B00] text-white' : 'border-white/40 bg-black/25'}`}>
+                      <div className="absolute inset-0 bg-black/5 flex items-start justify-start p-3 cursor-pointer z-25" onClick={() => toggleSelectMedia(m._id)}>
+                        <div className={`w-5.5 h-5.5 rounded-md border flex items-center justify-center ${isSelected ? 'bg-rose-500 border-rose-500 text-white' : 'border-white/40 bg-black/25'}`}>
                           {isSelected && <Check className="h-4.5 w-4.5" />}
                         </div>
                       </div>
                     ) : (
-                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 cursor-pointer z-30" onClick={() => setSelectedItem(m)}>
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 cursor-pointer z-20" onClick={() => setSelectedItem(m)}>
                         <div className="p-2.5 rounded-full bg-white/25 backdrop-blur-md border border-white/30 text-white hover:scale-105 transition-transform">
                           <ZoomIn className="h-4.5 w-4.5" />
                         </div>
@@ -1300,7 +1315,19 @@ export default function ClientGallery() {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-4 pointer-events-auto">
+            <div className="flex items-center gap-3 pointer-events-auto">
+              <button 
+                onClick={() => toggleSelectMedia(selectedItem._id)} 
+                className={`px-4 py-2 rounded-xl flex items-center gap-2 font-black text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer border ${
+                  selectedMediaIds.includes(selectedItem._id)
+                    ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-400 shadow-rose-500/40 ring-2 ring-rose-300'
+                    : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+                }`}
+              >
+                <Heart className={`h-4.5 w-4.5 ${selectedMediaIds.includes(selectedItem._id) ? 'fill-white text-white' : 'text-rose-400'}`} />
+                {selectedMediaIds.includes(selectedItem._id) ? 'Liked ❤️' : 'Like Photo ❤️'}
+              </button>
+
               <button 
                 onClick={() => downloadSingleFile(resolveMediaUrl(selectedItem), `${selectedItem.name || 'media'}_${selectedItem._id}`)} 
                 className="bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] px-4 py-2 rounded-xl flex items-center gap-2 font-black text-xs uppercase tracking-wider transition-colors shadow-md cursor-pointer"
