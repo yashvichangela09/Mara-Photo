@@ -725,6 +725,38 @@ export default function ClientGallery() {
     return true;
   });
 
+  const getWatermarkPosition = (position?: string) => {
+    switch (position) {
+      case 'TOP_LEFT':
+        return { top: '16px', left: '16px' };
+      case 'TOP_RIGHT':
+        return { top: '16px', right: '16px' };
+      case 'BOTTOM_LEFT':
+        return { bottom: '16px', left: '16px' };
+      case 'BOTTOM_CENTER':
+        return { bottom: '16px', left: '50%', transform: 'translateX(-50%)' };
+      case 'BOTTOM_RIGHT':
+      default:
+        return { bottom: '16px', right: '16px' };
+    }
+  };
+
+  const effectiveWatermark = (() => {
+    if (event?.watermark?.isActive) return event.watermark;
+    if (event?.watermark?.type && event.watermark.type !== 'NONE') return event.watermark;
+    if (event?.studioId?.watermark?.type && event.studioId.watermark.type !== 'NONE') return event.studioId.watermark;
+    if (event?.studioId?.logoUrl) {
+      return {
+        type: 'LOGO',
+        logoUrl: event.studioId.logoUrl,
+        position: 'TOP_RIGHT',
+        opacity: 0.85,
+        width: 20
+      };
+    }
+    return null;
+  })();
+
   return (
     <div className="min-h-screen bg-[#faf9f6] text-[#09090b] flex flex-col relative font-poppins selection:bg-[#c5a880] selection:text-[#09090b]">
       {/* Whitelabel Header with Bigger Logo & Studio Name */}
@@ -1346,22 +1378,77 @@ export default function ClientGallery() {
             {galleryMedia.findIndex(m => m._id === selectedItem._id) > 0 && (
               <button 
                 onClick={(e) => { e.stopPropagation(); setSelectedItem(galleryMedia[galleryMedia.findIndex(m => m._id === selectedItem._id) - 1]); }} 
-                className="absolute left-4 p-4 rounded-full bg-white/5 hover:bg-white/15 text-white transition-colors border border-white/10 z-20"
+                className="absolute left-4 p-4 rounded-full bg-white/5 hover:bg-white/15 text-white transition-colors border border-white/10 z-30"
               >
                 <ChevronLeft className="h-8 w-8" />
               </button>
             )}
 
-            {selectedItem.type === 'PHOTO' ? (
-              <img src={resolveMediaUrl(selectedItem)} alt="detailed preview" className="max-w-[85vw] max-h-[85vh] object-contain rounded-xl select-none" />
-            ) : (
-              <video ref={playerRef} controls src={resolveMediaUrl(selectedItem)} className="max-w-[85vw] max-h-[85vh] object-contain rounded-xl" />
-            )}
+            <div className="relative inline-block max-w-[85vw] max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl">
+              {selectedItem.type === 'PHOTO' ? (
+                <img src={resolveMediaUrl(selectedItem)} alt="detailed preview" className="max-w-[85vw] max-h-[85vh] object-contain rounded-2xl select-none" />
+              ) : (
+                <video ref={playerRef} controls src={resolveMediaUrl(selectedItem)} className="max-w-[85vw] max-h-[85vh] object-contain rounded-2xl" />
+              )}
+
+              {/* Heart & Download Buttons Overlayed DIRECTLY ON TOP-RIGHT CORNER OF PHOTO */}
+              <div className="absolute top-4 right-4 z-30 flex items-center gap-2 bg-black/40 backdrop-blur-md p-1.5 rounded-full border border-white/20 shadow-xl pointer-events-auto">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); toggleSelectMedia(selectedItem._id); }} 
+                  className={`p-2.5 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                    selectedMediaIds.includes(selectedItem._id)
+                      ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/40 ring-2 ring-rose-300 scale-105'
+                      : 'bg-white/10 hover:bg-white/25 text-white'
+                  }`}
+                  title={selectedMediaIds.includes(selectedItem._id) ? "Liked ❤️" : "Like Photo ❤️"}
+                >
+                  <Heart className={`h-5 w-5 ${selectedMediaIds.includes(selectedItem._id) ? 'fill-white text-white' : 'text-rose-400'}`} />
+                </button>
+
+                <button 
+                  onClick={(e) => { e.stopPropagation(); downloadSingleFile(resolveMediaUrl(selectedItem), `${selectedItem.name || 'media'}_${selectedItem._id}`); }} 
+                  className="p-2.5 rounded-full bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] transition-all cursor-pointer shadow-md"
+                  title="Download Photo"
+                >
+                  <Download className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Studio Logo / Watermark Overlayed DIRECTLY ON TOP OF PHOTO */}
+              {effectiveWatermark && (
+                <div className="absolute inset-0 pointer-events-none z-20">
+                  {effectiveWatermark.type === 'LOGO' && (effectiveWatermark.logoUrl || event?.studioId?.logoUrl) && (
+                    <img 
+                      src={effectiveWatermark.logoUrl || event?.studioId?.logoUrl} 
+                      alt="Watermark Logo"
+                      className="absolute object-contain max-h-16 shadow-md p-1 rounded-lg bg-white/20 backdrop-blur-xs"
+                      style={{
+                        opacity: effectiveWatermark.opacity ?? 0.85,
+                        width: `${effectiveWatermark.width || 20}%`,
+                        ...getWatermarkPosition(effectiveWatermark.position || 'TOP_RIGHT')
+                      }}
+                    />
+                  )}
+                  {effectiveWatermark.type === 'TEXT' && effectiveWatermark.text && (
+                    <div 
+                      className="absolute font-extrabold text-sm md:text-base tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] whitespace-nowrap px-3 py-1 rounded bg-black/30 backdrop-blur-xs"
+                      style={{
+                        color: effectiveWatermark.textColor || '#ffffff',
+                        opacity: effectiveWatermark.opacity ?? 0.85,
+                        ...getWatermarkPosition(effectiveWatermark.position || 'TOP_RIGHT')
+                      }}
+                    >
+                      {effectiveWatermark.text}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {galleryMedia.findIndex(m => m._id === selectedItem._id) < galleryMedia.length - 1 && (
               <button 
                 onClick={(e) => { e.stopPropagation(); setSelectedItem(galleryMedia[galleryMedia.findIndex(m => m._id === selectedItem._id) + 1]); }} 
-                className="absolute right-4 p-4 rounded-full bg-white/5 hover:bg-white/15 text-white transition-colors border border-white/10 z-20"
+                className="absolute right-4 p-4 rounded-full bg-white/5 hover:bg-white/15 text-white transition-colors border border-white/10 z-30"
               >
                 <ChevronRight className="h-8 w-8" />
               </button>
