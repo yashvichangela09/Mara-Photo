@@ -1372,18 +1372,26 @@ export default function ClientGallery() {
                 <video ref={playerRef} controls src={resolveMediaUrl(selectedItem)} className="max-w-[85vw] max-h-[85vh] object-contain rounded-2xl" />
               )}
 
-              {/* ONLY Heart Button Overlayed DIRECTLY ON TOP-RIGHT CORNER OF PHOTO */}
-              <div className="absolute top-4 right-4 z-30 pointer-events-auto">
+              {/* Heart & Download Buttons Overlayed DIRECTLY ON TOP-RIGHT CORNER OF PHOTO */}
+              <div className="absolute top-4 right-4 z-30 flex items-center gap-2 bg-black/40 backdrop-blur-md p-1.5 rounded-full border border-white/20 shadow-xl pointer-events-auto">
                 <button 
                   onClick={(e) => { e.stopPropagation(); toggleSelectMedia(selectedItem._id); }} 
-                  className={`p-3 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xl backdrop-blur-md border ${
+                  className={`p-2.5 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                     selectedMediaIds.includes(selectedItem._id)
-                      ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-400 shadow-rose-500/40 ring-4 ring-rose-300/30 scale-110'
-                      : 'bg-black/40 hover:bg-black/60 text-white border-white/20 hover:scale-110'
+                      ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/40 ring-2 ring-rose-300 scale-105'
+                      : 'bg-white/10 hover:bg-white/25 text-white'
                   }`}
                   title={selectedMediaIds.includes(selectedItem._id) ? "Liked ❤️" : "Like Photo ❤️"}
                 >
                   <Heart className={`h-5 w-5 ${selectedMediaIds.includes(selectedItem._id) ? 'fill-white text-white' : 'text-rose-400'}`} />
+                </button>
+
+                <button 
+                  onClick={(e) => { e.stopPropagation(); downloadSingleFile(resolveMediaUrl(selectedItem), `${selectedItem.name || 'media'}_${selectedItem._id}`); }} 
+                  className="p-2.5 rounded-full bg-[#c5a880] hover:bg-[#b59a72] text-[#09090b] transition-all cursor-pointer shadow-md hover:scale-105"
+                  title="Download Photo"
+                >
+                  <Download className="h-5 w-5" />
                 </button>
               </div>
 
