@@ -13,6 +13,7 @@ import { EventCover } from '../models/EventCover';
 import { Event } from '../models/Event';
 import { Media } from '../models/Media';
 import { Studio } from '../models/Studio';
+import GalleryVisitor from '../models/GalleryVisitor';
 import { authenticateJWT, AuthRequest } from '../middlewares/auth';
 import { uploadFile } from '../services/StorageService';
 
@@ -77,15 +78,19 @@ router.get('/stats', async (req: AuthRequest, res) => {
     const studioId = studio._id;
 
     // Parallel count queries for performance
-    const [eventsCount, photosCount, customersCount] = await Promise.all([
+    const [eventsCount, mediaCount, visitorsCount, teamCount, customersCount] = await Promise.all([
       Event.countDocuments({ studioId }),
-      Media.countDocuments({ studioId, type: 'PHOTO' }),
-      Customer.countDocuments({}),
+      Media.countDocuments({ studioId }), // Count all media (photos and videos)
+      GalleryVisitor.countDocuments({ studioId }),
+      Team.countDocuments({ studioId }),
+      Customer.countDocuments({ studioId }), // Fixed to only count this studio's customers
     ]);
 
     return res.json({
       events: eventsCount,
-      photos: photosCount,
+      media: mediaCount,
+      visitors: visitorsCount,
+      teamMembers: teamCount,
       customers: customersCount,
       studioName: studio.name,
       subscriptionPlan: studio.subscriptionPlan,
@@ -129,6 +134,15 @@ router.delete('/customers/:id', async (req: AuthRequest, res) => {
   }
 });
 
+router.put('/customers/:id', async (req: AuthRequest, res) => {
+  try {
+    const updated = await Customer.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // --- TEAM ---
 router.get('/team', async (req: AuthRequest, res) => {
   try {
@@ -145,6 +159,13 @@ router.post('/team', async (req: AuthRequest, res) => {
   try {
     const studio = await Studio.findOne({ ownerId: req.user!._id });
     if (!studio) return res.status(403).json({ error: 'Studio not found' });
+    
+    // Check for duplicates
+    const existingMember = await Team.findOne({ studioId: studio._id, email: req.body.email });
+    if (existingMember) {
+      return res.status(400).json({ error: 'Team member with this email already exists' });
+    }
+
     const member = new Team({ ...req.body, studioId: studio._id });
     await member.save();
     res.json(member);
@@ -157,6 +178,15 @@ router.delete('/team/:id', async (req: AuthRequest, res) => {
   try {
     await Team.findByIdAndDelete(req.params.id);
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.put('/team/:id', async (req: AuthRequest, res) => {
+  try {
+    const updated = await Team.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -228,6 +258,19 @@ router.delete('/quotations/:id', async (req: AuthRequest, res) => {
   }
 });
 
+router.put('/quotations/:id', async (req: AuthRequest, res) => {
+  try {
+    const quotation = await Quotation.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    res.json(quotation);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // --- BILLS ---
 router.get('/bills', async (req: AuthRequest, res) => {
   try {
@@ -256,6 +299,15 @@ router.delete('/bills/:id', async (req: AuthRequest, res) => {
   try {
     await Bill.findByIdAndDelete(req.params.id);
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.put('/bills/:id', async (req: AuthRequest, res) => {
+  try {
+    const updated = await Bill.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }

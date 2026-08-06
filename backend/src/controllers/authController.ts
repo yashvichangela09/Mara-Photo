@@ -2,8 +2,11 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User, Studio } from '../models';
-import { sendOTPEmail, sendWelcomeEmail } from '../services/EmailService';
+import { sendOTPEmail, sendWelcomeEmail, sendAdminNotificationEmail } from '../services/EmailService';
 import { AuthRequest } from '../middlewares/auth';
+import { OAuth2Client } from 'google-auth-library';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_super_secret_jwt_access_token_key_1234';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'default_super_secret_jwt_refresh_token_key_5678';
@@ -18,7 +21,7 @@ const generateTokens = (userId: string, role: string) => {
  * Register a new Studio Owner and auto-initialize their Studio profile
  */
 export const registerStudioOwner = async (req: Request, res: Response) => {
-  const { name, email, password, phone, studioName, subdomain, websiteLink, logoUrl } = req.body;
+  const { name, email, password, phone, studioName, subdomain, websiteLink, logoUrl, instagramUrl, facebookUrl } = req.body;
 
   try {
     if (!name || !email || !password || !phone || !studioName || !subdomain) {
@@ -67,6 +70,8 @@ export const registerStudioOwner = async (req: Request, res: Response) => {
       subscriptionStatus: 'FREE',
       customDomain: websiteLink || undefined,
       logoUrl: logoUrl || undefined,
+      instagramUrl: instagramUrl || undefined,
+      facebookUrl: facebookUrl || undefined,
     });
 
     const tokens = generateTokens(newUser._id.toString(), newUser.role);
@@ -99,6 +104,33 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    // SUPER_ADMIN interception
+    if (email.toLowerCase() === 'maraphoto303@gmail.com' && password === 'maraphoto@2005') {
+      let adminUser = await User.findOne({ email: 'maraphoto303@gmail.com' });
+      if (!adminUser) {
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+        adminUser = await User.create({
+          name: 'Super Admin',
+          email: 'maraphoto303@gmail.com',
+          passwordHash,
+          role: 'SUPER_ADMIN'
+        });
+      } else if (adminUser.role !== 'SUPER_ADMIN') {
+        adminUser.role = 'SUPER_ADMIN';
+      }
+      
+      const tokens = generateTokens(adminUser._id.toString(), adminUser.role);
+      adminUser.refreshToken = tokens.refreshToken;
+      await adminUser.save();
+
+      return res.json({
+        user: { id: adminUser._id, name: adminUser.name, email: adminUser.email, role: adminUser.role },
+        studio: null,
+        ...tokens,
+      });
+    }
+
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user || !user.passwordHash) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -120,12 +152,83 @@ export const login = async (req: Request, res: Response) => {
     }
 
     return res.json({
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone },
       studio: studio ? { id: studio._id, name: studio.name, subdomain: studio.subdomain } : null,
       ...tokens,
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Google Login/Signup
+ */
+export const googleLogin = async (req: Request, res: Response) => {
+  const { credential } = req.body;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ error: 'Invalid Google token' });
+    }
+
+    const email = payload.email.toLowerCase();
+    const name = payload.name || 'User';
+
+    let user = await User.findOne({ email });
+
+    // If user doesn't exist, create them as STUDIO_OWNER (or just user)
+    // For our app, we usually need studio details for registration, but for Google Login we can
+    // just create the user, and if they don't have a studio, they can be prompted to create one later.
+    // Or we create a placeholder studio. We'll create a placeholder studio.
+    let isNewUser = false;
+    if (!user) {
+      isNewUser = true;
+      user = await User.create({
+        name,
+        email,
+        role: 'STUDIO_OWNER',
+        // Password is not needed for google auth, but we might want a placeholder or optional password
+      });
+    }
+
+    const tokens = generateTokens(user._id.toString(), user.role);
+    user.refreshToken = tokens.refreshToken;
+    await user.save();
+
+    let studio = null;
+    if (user.role === 'STUDIO_OWNER') {
+      studio = await Studio.findOne({ ownerId: user._id });
+      
+      // If new user, create a placeholder studio
+      if (!studio) {
+        const cleanSubdomain = name.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + Math.floor(Math.random() * 10000);
+        studio = await Studio.create({
+          name: name + "'s Studio",
+          subdomain: cleanSubdomain,
+          ownerId: user._id,
+          subscriptionPlan: 'BASIC',
+          subscriptionStatus: 'FREE',
+        });
+      }
+    }
+
+    if (isNewUser) {
+      sendWelcomeEmail(user.email, user.name, true).catch(err => console.error("Welcome Email Failed:", err));
+    }
+
+    return res.json({
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone },
+      studio: studio ? { id: studio._id, name: studio.name, subdomain: studio.subdomain } : null,
+      ...tokens,
+    });
+  } catch (err: any) {
+    console.error('Google Login Error:', err);
+    return res.status(500).json({ error: 'Failed to authenticate with Google' });
   }
 };
 
@@ -145,7 +248,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
     }
 
     return res.json({
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone },
       studio: studio ? { id: studio._id, name: studio.name, subdomain: studio.subdomain } : null,
     });
   } catch (err: any) {
@@ -237,7 +340,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
     sendWelcomeEmail(user.email, user.name || 'Guest', false).catch(err => console.error("Welcome Email Failed:", err));
 
     return res.json({
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone },
       ...tokens,
     });
   } catch (err: any) {

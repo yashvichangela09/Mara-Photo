@@ -7,10 +7,18 @@ export interface IEvent extends Document {
   clientMobile: string;
   clientEmail: string;
   date: Date;
-  type: 'WEDDING' | 'PRE_WEDDING' | 'RECEPTION' | 'BIRTHDAY' | 'CORPORATE' | 'SCHOOL' | 'GARBA' | 'CONCERT' | 'RELIGIOUS';
+  type: 'WEDDING' | 'PRE_WEDDING' | 'PRE WEDDING' | 'RECEPTION' | 'BIRTHDAY' | 'CORPORATE' | 'SCHOOL' | 'GARBA' | 'CONCERT' | 'RELIGIOUS' | 'ENGAGEMENT' | 'BABY SHOWER' | 'PANCHMASI';
   coverImageUrl?: string;
   description?: string;
-  location?: string;
+  location: string;
+  time: string;
+  isMultiDay?: boolean;
+  totalDays?: number;
+  days?: {
+    date: Date;
+    time: string;
+    location: string;
+  }[];
   accessType: 'PUBLIC' | 'PASSWORD' | 'OTP' | 'QR';
   passwordHash?: string; // used if accessType is 'PASSWORD'
   studioId: mongoose.Types.ObjectId;
@@ -39,12 +47,20 @@ const EventSchema = new Schema<IEvent>({
   date: { type: Date, required: true },
   type: {
     type: String,
-    enum: ['WEDDING', 'PRE_WEDDING', 'RECEPTION', 'BIRTHDAY', 'CORPORATE', 'SCHOOL', 'GARBA', 'CONCERT', 'RELIGIOUS'],
+    enum: ['WEDDING', 'PRE_WEDDING', 'PRE WEDDING', 'RECEPTION', 'BIRTHDAY', 'CORPORATE', 'SCHOOL', 'GARBA', 'CONCERT', 'RELIGIOUS', 'ENGAGEMENT', 'BABY SHOWER', 'PANCHMASI'],
     required: true
   },
   coverImageUrl: { type: String },
   description: { type: String },
-  location: { type: String },
+  location: { type: String, required: true },
+  time: { type: String, required: true },
+  isMultiDay: { type: Boolean, default: false },
+  totalDays: { type: Number, default: 1 },
+  days: [{
+    date: { type: Date },
+    time: { type: String },
+    location: { type: String }
+  }],
   accessType: {
     type: String,
     enum: ['PUBLIC', 'PASSWORD', 'OTP', 'QR'],

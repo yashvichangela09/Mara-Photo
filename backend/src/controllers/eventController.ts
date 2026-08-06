@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import QRCode from 'qrcode';
 import { AuthRequest } from '../middlewares/auth';
 import { Event, Studio, User, Media } from '../models';
+import Customer from '../models/Customer';
+import { sendAdminNotificationEmail, sendEventInviteEmail } from '../services/EmailService';
 
 /**
  * Creates a new event
@@ -18,6 +20,10 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
     coverImageUrl,
     description,
     location,
+    time,
+    isMultiDay,
+    totalDays,
+    days,
     accessType,
     password,
     assignedTeamEmails,
@@ -48,7 +54,7 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
     }
 
     let passwordHash = undefined;
-    if (accessType === 'PASSWORD' && password) {
+    if ((accessType === 'PASSWORD' || accessType === 'OTP') && password) {
       const salt = await bcrypt.genSalt(10);
       passwordHash = await bcrypt.hash(password, salt);
     }
@@ -75,6 +81,10 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
       coverImageUrl,
       description,
       location,
+      time,
+      isMultiDay,
+      totalDays,
+      days,
       accessType,
       passwordHash,
       studioId: studio._id,
@@ -82,6 +92,45 @@ export const createEvent = async (req: AuthRequest, res: Response) => {
       addToPortfolio: addToPortfolio || false,
       watermark: watermark || { isActive: false, type: 'LOGO', position: 'BOTTOM_RIGHT', width: 20, height: 20, opacity: 0.5 },
     });
+
+    // Auto-sync client to Customers directory
+    try {
+      let customer = await Customer.findOne({ 
+        studioId: studio._id, 
+        $or: [ { phone: clientMobile }, { email: clientEmail } ]
+      });
+
+      if (!customer) {
+        await Customer.create({
+          studioId: studio._id,
+          name: clientName,
+          phone: clientMobile,
+          email: clientEmail,
+          totalEvents: 1,
+          status: 'Active'
+        });
+      } else {
+        customer.totalEvents = (customer.totalEvents || 0) + 1;
+        await customer.save();
+      }
+    } catch (custErr) {
+      console.error('Error syncing customer:', custErr);
+    }
+
+    // Send email to the studio owner (logged in user) about the event creation
+    if (req.user && req.user.email) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const galleryLink = `${frontendUrl}/e/${newEvent.code}`;
+      
+      sendEventInviteEmail(
+        req.user.email,
+        req.user.name || 'Studio Owner',
+        name,
+        galleryLink,
+        accessType,
+        password // Send raw password so studio owner knows it
+      ).catch(err => console.error("Studio Owner Event Email Failed:", err));
+    }
 
     return res.status(201).json({ message: 'Event created successfully', event: newEvent });
   } catch (err: any) {
@@ -210,6 +259,10 @@ export const updateEvent = async (req: AuthRequest, res: Response) => {
     coverImageUrl,
     description,
     location,
+    time,
+    isMultiDay,
+    totalDays,
+    days,
     accessType,
     password,
     watermark,
@@ -251,14 +304,18 @@ export const updateEvent = async (req: AuthRequest, res: Response) => {
     if (coverImageUrl !== undefined) event.coverImageUrl = coverImageUrl;
     if (description !== undefined) event.description = description;
     if (location !== undefined) event.location = location;
+    if (time !== undefined) event.time = time;
+    if (isMultiDay !== undefined) event.isMultiDay = isMultiDay;
+    if (totalDays !== undefined) event.totalDays = totalDays;
+    if (days !== undefined) event.days = days;
     if (addToPortfolio !== undefined) event.addToPortfolio = addToPortfolio;
 
     if (accessType) {
       event.accessType = accessType;
-      if (accessType === 'PASSWORD' && password) {
+      if ((accessType === 'PASSWORD' || accessType === 'OTP') && password) {
         const salt = await bcrypt.genSalt(10);
         event.passwordHash = await bcrypt.hash(password, salt);
-      } else if (accessType !== 'PASSWORD') {
+      } else if (accessType !== 'PASSWORD' && accessType !== 'OTP') {
         event.passwordHash = undefined;
       }
     }
